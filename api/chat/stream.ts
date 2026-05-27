@@ -4,8 +4,6 @@ import { db } from '../_lib/db'
 import { getUserFromRequest } from '../_lib/auth'
 import { buildSystemPrompt } from '../_lib/prompts'
 
-export const config = { maxDuration: 300 }
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ detail: 'Method not allowed' })
 
