@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const hash = createHash('sha256').update(password).digest('hex')
 
   const client = db()
-  const result = await client.table('users').select('password_hash').eq('username', u)
+  const result = await client.from('users').select('password_hash').eq('username', u)
   if (!result.data?.length) return res.status(401).json({ detail: 'Username not found.' })
   if (result.data[0].password_hash !== hash) return res.status(401).json({ detail: 'Incorrect password.' })
 

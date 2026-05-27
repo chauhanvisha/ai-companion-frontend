@@ -12,10 +12,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const hash = createHash('sha256').update(password).digest('hex')
 
   const client = db()
-  const existing = await client.table('users').select('username').eq('username', u)
+  const existing = await client.from('users').select('username').eq('username', u)
   if (existing.data?.length) return res.status(400).json({ detail: 'Username already taken.' })
 
-  const { error } = await client.table('users').insert({ username: u, password_hash: hash })
+  const { error } = await client.from('users').insert({ username: u, password_hash: hash })
   if (error) return res.status(500).json({ detail: error.message })
 
   const token = await createToken(u)

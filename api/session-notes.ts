@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   catch { return res.status(401).json({ detail: 'Unauthorized' }) }
 
   const client = db()
-  const result = await client.table('session_notes')
+  const result = await client.from('session_notes')
     .select('scenario,notes,created_at')
     .eq('username', username)
     .order('created_at', { ascending: false })

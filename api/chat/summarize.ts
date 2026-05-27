@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const summary = (response.content[0] as any).text
 
     const supabase = db()
-    await supabase.table('session_notes').insert({ username, scenario, notes: summary })
+    await supabase.from('session_notes').insert({ username, scenario, notes: summary })
 
     return res.json({ ok: true, summary })
   } catch (e: any) {

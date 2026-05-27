@@ -1,76 +1,54 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
-import { verifyToken } from '../_lib/auth'
-import { buildSystemPrompt } from '../_lib/prompts'
 import { db } from '../_lib/db'
+import { getUserFromRequest } from '../_lib/auth'
+import { buildSystemPrompt } from '../_lib/prompts'
 
-export const config = { runtime: 'edge' }
+export const config = { maxDuration: 300 }
 
-export default async function handler(req: Request) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ detail: 'Method not allowed' }), { status: 405 })
-  }
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return res.status(405).json({ detail: 'Method not allowed' })
 
-  // Auth
   let username: string
-  try {
-    const auth = req.headers.get('authorization') || ''
-    const token = auth.replace('Bearer ', '').trim()
-    username = await verifyToken(token)
-  } catch {
-    return new Response(JSON.stringify({ detail: 'Unauthorized' }), { status: 401 })
-  }
+  try { username = await getUserFromRequest(req as any) }
+  catch { return res.status(401).json({ detail: 'Unauthorized' }) }
 
-  const { messages, scenario, nudge_limit = 2 } = await req.json()
+  const { messages, scenario, nudge_limit = 2 } = req.body || {}
 
-  // Load profile + session notes
   const client = db()
   const [profileRes, notesRes] = await Promise.all([
-    client.table('user_profiles').select('field,target_role,school').eq('username', username),
-    client.table('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(3),
+    client.from('user_profiles').select('field,target_role,school').eq('username', username),
+    client.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(3),
   ])
 
   const profile = profileRes.data?.[0] || null
   const sessionNotes = notesRes.data || []
-
   const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes })
 
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.setHeader('Connection', 'keep-alive')
+  res.flushHeaders()
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder()
-      try {
-        const anthropicStream = anthropic.messages.stream({
-          model: 'claude-opus-4-7',
-          max_tokens: 2048,
-          system: systemPrompt,
-          messages,
-        })
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const stream = anthropic.messages.stream({
+      model: 'claude-opus-4-7',
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages,
+    })
 
-        for await (const event of anthropicStream) {
-          if (
-            event.type === 'content_block_delta' &&
-            event.delta.type === 'text_delta'
-          ) {
-            const data = `data: ${JSON.stringify({ text: event.delta.text })}\n\n`
-            controller.enqueue(encoder.encode(data))
-          }
-        }
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
-      } catch (e: any) {
-        const errData = `data: ${JSON.stringify({ error: e.message })}\n\n`
-        controller.enqueue(encoder.encode(errData))
-      } finally {
-        controller.close()
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
       }
-    },
-  })
-
-  return new Response(stream, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'X-Accel-Buffering': 'no',
-    },
-  })
+    }
+    res.write('data: [DONE]\n\n')
+  } catch (e: any) {
+    res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`)
+  } finally {
+    res.end()
+  }
 }

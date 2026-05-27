@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const client = db()
 
   if (req.method === 'GET') {
-    const result = await client.table('chat_histories')
+    const result = await client.from('chat_histories')
       .select('messages')
       .eq('username', username)
       .eq('scenario', scenario)
@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === 'POST') {
     const { messages } = req.body || {}
-    const { error } = await client.table('chat_histories').upsert({
+    const { error } = await client.from('chat_histories').upsert({
       username, scenario, messages, updated_at: new Date().toISOString()
     })
     if (error) return res.status(500).json({ detail: error.message })
@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'DELETE') {
-    await client.table('chat_histories').delete().eq('username', username).eq('scenario', scenario)
+    await client.from('chat_histories').delete().eq('username', username).eq('scenario', scenario)
     return res.json({ ok: true })
   }
 
