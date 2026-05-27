@@ -47,7 +47,7 @@ export async function saveProfile(field: string, target_role: string, school: st
 export async function getSessionNotes() {
   const res = await fetch(`${BASE}/api/session-notes`, { headers: authHeaders() })
   const data = await res.json()
-  return data.notes as SessionNote[]
+  return (data.notes || []) as SessionNote[]
 }
 
 export async function getChatHistory(scenario: string): Promise<Message[]> {
