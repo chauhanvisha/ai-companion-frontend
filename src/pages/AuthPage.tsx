@@ -52,7 +52,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <img src="/Highview Logo - Dark.png" alt="HighView" className="h-10 w-auto mx-auto mb-2" />
+          <img src="/highview-logo.png" alt="HighView" className="h-10 w-auto mx-auto mb-2" />
           <h1 className="text-2xl font-bold text-foreground tracking-tight mt-3">SEP AI Coach</h1>
           <p className="text-muted-foreground mt-1">Your personal early-career coach</p>
         </div>
