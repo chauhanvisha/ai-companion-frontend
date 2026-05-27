@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE = import.meta.env.VITE_API_URL || ''
 
 function token() {
   return localStorage.getItem('token') || ''
@@ -9,7 +9,7 @@ function authHeaders() {
 }
 
 export async function register(username: string, password: string) {
-  const res = await fetch(`${BASE}/auth/register`, {
+  const res = await fetch(`${BASE}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -20,7 +20,7 @@ export async function register(username: string, password: string) {
 }
 
 export async function login(username: string, password: string) {
-  const res = await fetch(`${BASE}/auth/login`, {
+  const res = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
@@ -31,12 +31,12 @@ export async function login(username: string, password: string) {
 }
 
 export async function getProfile() {
-  const res = await fetch(`${BASE}/profile`, { headers: authHeaders() })
+  const res = await fetch(`${BASE}/api/profile`, { headers: authHeaders() })
   return res.json()
 }
 
 export async function saveProfile(field: string, target_role: string, school: string) {
-  const res = await fetch(`${BASE}/profile`, {
+  const res = await fetch(`${BASE}/api/profile`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ field, target_role, school }),
@@ -45,19 +45,19 @@ export async function saveProfile(field: string, target_role: string, school: st
 }
 
 export async function getSessionNotes() {
-  const res = await fetch(`${BASE}/session-notes`, { headers: authHeaders() })
+  const res = await fetch(`${BASE}/api/session-notes`, { headers: authHeaders() })
   const data = await res.json()
   return data.notes as SessionNote[]
 }
 
 export async function getChatHistory(scenario: string): Promise<Message[]> {
-  const res = await fetch(`${BASE}/chat/history/${scenario}`, { headers: authHeaders() })
+  const res = await fetch(`${BASE}/api/chat/history/${scenario}`, { headers: authHeaders() })
   const data = await res.json()
   return data.messages || []
 }
 
 export async function saveChatHistory(scenario: string, messages: Message[]) {
-  await fetch(`${BASE}/chat/history/${scenario}`, {
+  await fetch(`${BASE}/api/chat/history/${scenario}`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ messages }),
@@ -65,14 +65,14 @@ export async function saveChatHistory(scenario: string, messages: Message[]) {
 }
 
 export async function clearChatHistory(scenario: string) {
-  await fetch(`${BASE}/chat/history/${scenario}`, {
+  await fetch(`${BASE}/api/chat/history/${scenario}`, {
     method: 'DELETE',
     headers: authHeaders(),
   })
 }
 
 export async function summarizeSession(messages: Message[], scenario: string) {
-  const res = await fetch(`${BASE}/chat/summarize`, {
+  const res = await fetch(`${BASE}/api/chat/summarize`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ messages, scenario }),
@@ -88,7 +88,7 @@ export function streamChat(
   onDone: () => void,
   onError: (err: string) => void,
 ) {
-  fetch(`${BASE}/chat/stream`, {
+  fetch(`${BASE}/api/chat/stream`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ messages, scenario, nudge_limit }),
