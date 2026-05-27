@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSessionNotes, SessionNote } from '../lib/api'
+import { getSessionNotes, getProfile, saveProfile, SessionNote } from '../lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
-import { LogOut, ArrowRight, Clock } from 'lucide-react'
+import { LogOut, ArrowRight, Clock, Pencil } from 'lucide-react'
 
 const SCENARIOS = [
   { key: 'interview', icon: '🎯', title: 'Interview Prep',       description: 'Practice mock questions and get real-time feedback',     gradient: 'from-blue-500 to-blue-600' },
@@ -19,8 +19,24 @@ export default function DashboardPage() {
   const [notes, setNotes] = useState<SessionNote[]>([])
   const navigate = useNavigate()
 
+  // Profile state
+  const [profileField, setProfileField] = useState('')
+  const [profileTargetRole, setProfileTargetRole] = useState('')
+  const [profileSchool, setProfileSchool] = useState('')
+  const [profileLoaded, setProfileLoaded] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [profileSaving, setProfileSaving] = useState(false)
+
   useEffect(() => {
     getSessionNotes().then(setNotes).catch(() => {})
+    getProfile().then((p) => {
+      if (p) {
+        setProfileField(p.field || '')
+        setProfileTargetRole(p.target_role || '')
+        setProfileSchool(p.school || '')
+      }
+      setProfileLoaded(true)
+    }).catch(() => setProfileLoaded(true))
   }, [])
 
   function logout() {
@@ -32,6 +48,21 @@ export default function DashboardPage() {
   function startScenario(key: string) {
     navigate(`/chat/${key}`)
   }
+
+  async function handleSaveProfile() {
+    setProfileSaving(true)
+    try {
+      await saveProfile(profileField, profileTargetRole, profileSchool)
+      setProfileSaved(true)
+      setTimeout(() => setProfileSaved(false), 2000)
+    } catch {
+      // silently ignore
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const profileIsEmpty = profileLoaded && !profileField && !profileTargetRole && !profileSchool
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -88,6 +119,71 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Your Profile card */}
+        <div className="mb-12">
+          <Card className="border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-muted-foreground" />
+                Your Profile
+              </CardTitle>
+              <CardDescription>
+                Keep this up to date so coaching stays relevant to you.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {profileIsEmpty ? (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add your details to personalise coaching →
+                </p>
+              ) : null}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground font-medium">Studying</label>
+                  <input
+                    type="text"
+                    value={profileField}
+                    onChange={e => setProfileField(e.target.value)}
+                    placeholder="e.g. Computer Science"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
+                      placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground font-medium">Goal</label>
+                  <input
+                    type="text"
+                    value={profileTargetRole}
+                    onChange={e => setProfileTargetRole(e.target.value)}
+                    placeholder="e.g. Product Manager"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
+                      placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-muted-foreground font-medium">School</label>
+                  <input
+                    type="text"
+                    value={profileSchool}
+                    onChange={e => setProfileSchool(e.target.value)}
+                    placeholder="e.g. Stanford"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
+                      placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+              <Button
+                onClick={handleSaveProfile}
+                disabled={profileSaving}
+                size="sm"
+                variant={profileSaved ? 'outline' : 'default'}
+              >
+                {profileSaved ? 'Saved ✓' : 'Save changes'}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Recent sessions */}
