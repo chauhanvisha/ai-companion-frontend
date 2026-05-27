@@ -3,16 +3,22 @@ import { useNavigate } from 'react-router-dom'
 import { getSessionNotes, getProfile, saveProfile, SessionNote } from '../lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
-import { LogOut, ArrowRight, Clock, Pencil } from 'lucide-react'
+import { LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail } from 'lucide-react'
+
+const SCENARIO_ICONS_LUCIDE: Record<string, React.ReactNode> = {
+  interview: <Mic className="w-6 h-6 text-white" />,
+  inbox:     <Inbox className="w-6 h-6 text-white" />,
+  email:     <Mail className="w-6 h-6 text-white" />,
+}
 
 const SCENARIOS = [
-  { key: 'interview', icon: '🎯', title: 'Interview Prep',       description: 'Practice mock questions and get real-time feedback',     gradient: 'from-blue-500 to-blue-600' },
-  { key: 'inbox',     icon: '📥', title: 'Inbox Reset',          description: 'Build a system to tame your overloaded inbox',            gradient: 'from-purple-500 to-purple-600' },
-  { key: 'email',     icon: '✉️',  title: 'Email Writing',        description: 'Draft professional emails that make the right impression', gradient: 'from-emerald-500 to-emerald-600' },
+  { key: 'interview', title: 'Interview Prep',  description: 'Practice mock questions and get real-time feedback',     gradient: 'from-[#1C88FC] to-blue-600' },
+  { key: 'inbox',     title: 'Inbox Reset',     description: 'Build a system to tame your overloaded inbox',            gradient: 'from-violet-500 to-violet-600' },
+  { key: 'email',     title: 'Email Writing',   description: 'Draft professional emails that make the right impression', gradient: 'from-emerald-500 to-emerald-600' },
 ]
 
 const SCENARIO_TITLES: Record<string, string> = Object.fromEntries(SCENARIOS.map(s => [s.key, s.title]))
-const SCENARIO_ICONS: Record<string, string> = Object.fromEntries(SCENARIOS.map(s => [s.key, s.icon]))
+const SCENARIO_ICONS: Record<string, string> = { interview: '🎯', inbox: '📥', email: '✉️' }
 
 export default function DashboardPage() {
   const username = localStorage.getItem('username') || 'there'
@@ -101,8 +107,8 @@ export default function DashboardPage() {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center text-xl shadow-sm mb-3`}>
-                    {s.icon}
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${s.gradient} flex items-center justify-center shadow-sm mb-3`}>
+                    {SCENARIO_ICONS_LUCIDE[s.key]}
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
                 </div>
