@@ -70,10 +70,7 @@ export default function DashboardPage() {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm">
-              🎓
-            </div>
-            <span className="font-semibold text-foreground">SEP AI Coach</span>
+            <img src="/Highview Logo - Dark.png" alt="HighView" className="h-7 w-auto" />
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden sm:block">Hi, {username}!</span>

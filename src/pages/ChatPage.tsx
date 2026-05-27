@@ -178,6 +178,7 @@ export default function ChatPage() {
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
           </Button>
+          <img src="/Highview Logo - Dark.png" alt="HighView" className="h-6 w-auto hidden sm:block" />
 
           {/* Mobile profile toggle — hidden on sm+ */}
           <Button

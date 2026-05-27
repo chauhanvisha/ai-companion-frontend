@@ -52,10 +52,8 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg shadow-primary/20">
-            <span className="text-2xl">🎓</span>
-          </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">SEP AI Coach</h1>
+          <img src="/Highview Logo - Dark.png" alt="HighView" className="h-10 w-auto mx-auto mb-2" />
+          <h1 className="text-2xl font-bold text-foreground tracking-tight mt-3">SEP AI Coach</h1>
           <p className="text-muted-foreground mt-1">Your personal early-career coach</p>
         </div>
 
