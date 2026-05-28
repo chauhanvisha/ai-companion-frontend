@@ -10,13 +10,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const client = db()
 
   if (req.method === 'GET') {
-    const result = await client.from('user_profiles').select('field,target_role,school').eq('username', username)
+    const result = await client
+      .from('user_profiles')
+      .select('field,target_role,school,student_model')
+      .eq('username', username)
     return res.json(result.data?.[0] || {})
   }
 
   if (req.method === 'POST') {
     const { field = '', target_role = '', school = '' } = req.body || {}
-    const { error } = await client.from('user_profiles').upsert({ username, field, target_role, school })
+    // Only update basic fields — never overwrite student_model from the profile form
+    const { error } = await client
+      .from('user_profiles')
+      .upsert({ username, field, target_role, school }, { onConflict: 'username' })
     if (error) return res.status(500).json({ detail: error.message })
     return res.json({ ok: true })
   }

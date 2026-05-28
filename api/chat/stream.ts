@@ -13,15 +13,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { messages, scenario, nudge_limit = 2 } = req.body || {}
 
-  const client = db()
+  const supabase = db()
   const [profileRes, notesRes] = await Promise.all([
-    client.from('user_profiles').select('field,target_role,school').eq('username', username),
-    client.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(3),
+    supabase.from('user_profiles').select('field,target_role,school,student_model').eq('username', username),
+    supabase.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(3),
   ])
 
-  const profile = profileRes.data?.[0] || null
+  const profileRow   = profileRes.data?.[0] || null
+  const profile      = profileRow ? { field: profileRow.field, target_role: profileRow.target_role, school: profileRow.school } : null
+  const studentModel = profileRow?.student_model || null
   const sessionNotes = notesRes.data || []
-  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes })
+  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel })
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')

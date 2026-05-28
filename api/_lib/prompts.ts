@@ -1,3 +1,77 @@
+// ─── Student model type ──────────────────────────────────────────────────────
+export interface StudentModel {
+  communication_style?:    string
+  confidence_level?:       string
+  recurring_strengths?:    string[]
+  recurring_weaknesses?:   string[]
+  what_resonates?:         string[]
+  trajectory?:             string
+  preferred_feedback_style?: string
+  sessions_total?:         number
+  last_updated?:           string
+}
+
+// ─── Post-session memory extraction prompt ───────────────────────────────────
+export function buildExtractionPrompt(existingModel: StudentModel, conversation: string): string {
+  return `You are analyzing a coaching session to update a student's persistent memory profile.
+
+EXISTING STUDENT MODEL:
+${JSON.stringify(existingModel, null, 2)}
+
+CONVERSATION TO ANALYZE:
+${conversation}
+
+Based on THIS session, extract observations about this student.
+Return ONLY a valid JSON object. Only include fields where you saw CLEAR evidence.
+
+{
+  "communication_style": "one specific sentence about HOW they communicate (e.g. 'gives one-word answers first, expands when asked a follow-up')",
+  "confidence_level": "one specific sentence about their confidence and where it varies",
+  "recurring_strengths": ["specific strength you observed — concrete, not generic"],
+  "recurring_weaknesses": ["specific pattern to work on — concrete, not generic"],
+  "what_resonates": ["type of example or coaching approach that visibly clicked for them"],
+  "trajectory": "one sentence about their improvement arc across sessions",
+  "preferred_feedback_style": "how they respond best to feedback (e.g. 'needs acknowledgment before critique')"
+}
+
+STRICT RULES:
+- Only include fields with clear evidence from THIS conversation
+- Be specific: "deflects conflict questions by saying it resolved itself" not "needs work on conflict"
+- For array fields: only add items NOT already in the existing model
+- If the session was short or nothing notable happened, return {}
+- Return raw JSON only — no markdown, no explanation, no code blocks`
+}
+
+// ─── Merge new extraction into existing student model ────────────────────────
+export function mergeStudentModel(existing: StudentModel, extracted: Partial<StudentModel>): StudentModel {
+  const merged: StudentModel = { ...existing }
+
+  // String fields: replace if extracted has something new
+  const stringFields: (keyof StudentModel)[] = [
+    'communication_style', 'confidence_level', 'trajectory', 'preferred_feedback_style',
+  ]
+  for (const field of stringFields) {
+    if (extracted[field]) (merged as any)[field] = extracted[field]
+  }
+
+  // Array fields: union (no duplicates, case-insensitive)
+  const arrayFields: (keyof StudentModel)[] = ['recurring_strengths', 'recurring_weaknesses', 'what_resonates']
+  for (const field of arrayFields) {
+    const existing_arr: string[] = (existing[field] as string[]) || []
+    const new_arr:      string[] = (extracted[field] as string[]) || []
+    const combined = [...existing_arr]
+    for (const item of new_arr) {
+      const already = combined.some(e => e.toLowerCase().includes(item.toLowerCase().slice(0, 20)))
+      if (!already) combined.push(item)
+    }
+    if (combined.length > 0) (merged as any)[field] = combined.slice(0, 8) // cap at 8 per field
+  }
+
+  merged.sessions_total = (existing.sessions_total || 0) + 1
+  merged.last_updated   = new Date().toISOString().slice(0, 10)
+  return merged
+}
+
 const SCENARIO_NAMES: Record<string, string> = {
   interview: 'Practice Interview',
   email: 'Professional Email Builder',
@@ -23,27 +97,54 @@ export function buildSystemPrompt(opts: {
   scenario?: string
   profile?: { field?: string; target_role?: string; school?: string } | null
   sessionNotes?: { scenario: string; notes: string; created_at: string }[]
+  studentModel?: StudentModel | null
 }): string {
   const parts: string[] = []
 
-  if (opts.profile && (opts.profile.field || opts.profile.target_role || opts.profile.school)) {
-    const { field = 'unspecified', target_role = 'unspecified', school = '' } = opts.profile
-    let block = 'STUDENT PROFILE:\n'
-    if (school) block += `- School: ${school}\n`
-    block += `- Field of study: ${field}\n- Target role: ${target_role}\n`
+  const hasProfile = opts.profile && (opts.profile.field || opts.profile.target_role || opts.profile.school)
+  const hasModel   = opts.studentModel && Object.keys(opts.studentModel).length > 1
 
+  if (hasProfile || hasModel) {
+    let block = ''
+
+    // ── Basic profile ──────────────────────────────────────────────────────
+    if (hasProfile) {
+      const { field = 'unspecified', target_role = 'unspecified', school = '' } = opts.profile!
+      block += 'STUDENT PROFILE:\n'
+      if (school) block += `- School: ${school}\n`
+      block += `- Field of study: ${field}\n- Target role: ${target_role}\n`
+    }
+
+    // ── Living student model (the intelligence layer) ───────────────────────
+    if (hasModel) {
+      const m = opts.studentModel!
+      block += '\nWHAT I KNOW ABOUT THIS STUDENT (updated after every session):\n'
+      if (m.communication_style)      block += `- Communication style: ${m.communication_style}\n`
+      if (m.confidence_level)         block += `- Confidence: ${m.confidence_level}\n`
+      if (m.recurring_strengths?.length)
+        block += `- Strengths: ${m.recurring_strengths.join('; ')}\n`
+      if (m.recurring_weaknesses?.length)
+        block += `- Working on: ${m.recurring_weaknesses.join('; ')}\n`
+      if (m.what_resonates?.length)
+        block += `- What clicks for them: ${m.what_resonates.join('; ')}\n`
+      if (m.preferred_feedback_style) block += `- Feedback style: ${m.preferred_feedback_style}\n`
+      if (m.trajectory)               block += `- Progress arc: ${m.trajectory}\n`
+      if (m.sessions_total)           block += `- Sessions completed: ${m.sessions_total}\n`
+      block += '\nUse this knowledge to adapt your coaching from the very first message — do not re-ask things you already know.\n'
+    }
+
+    // ── Recent session history (for continuity / commitment follow-up) ──────
     if (opts.sessionNotes?.length) {
-      block += '\nRECENT COACHING HISTORY (most recent first):\n'
+      block += '\nRECENT SESSION NOTES (most recent first):\n'
       for (const note of opts.sessionNotes) {
         const name = SCENARIO_NAMES[note.scenario] || note.scenario
         const date = note.created_at?.slice(0, 10) || ''
         block += `- [${date}] ${name}: ${note.notes}\n`
       }
       block +=
-        '\nIMPORTANT: In your very first message this session, explicitly reference what the student ' +
-        'worked on last time. If the notes include a NEXT: commitment they made, ask whether they got ' +
-        'a chance to follow through on it. For example: "Last time you said you\'d [commitment] — did you ' +
-        'get a chance to try it?" Make the memory tangible. The student should feel seen, not just analysed.\n'
+        '\nIn your very first message, explicitly reference what the student worked on last time. ' +
+        'If the notes include a NEXT: commitment, ask whether they followed through. ' +
+        'Make the memory tangible — the student should feel known, not analysed.\n'
     }
 
     block +=
