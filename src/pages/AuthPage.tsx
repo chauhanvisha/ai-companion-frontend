@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { login, register, getProfile } from '../lib/api'
+import { login, register } from '../lib/api'
 
 export default function AuthPage() {
   const [tab, setTab]           = useState<'login' | 'signup'>('login')
@@ -28,12 +28,7 @@ export default function AuthPage() {
       localStorage.setItem('token',    data.token)
       localStorage.setItem('username', data.username)
 
-      const profile = await getProfile()
-      if (profile?.field || profile?.target_role || profile?.school) {
-        navigate('/dashboard')
-      } else {
-        navigate('/onboarding')
-      }
+      navigate('/dashboard')
     } catch (err: any) {
       setError(err.message)
     } finally {
