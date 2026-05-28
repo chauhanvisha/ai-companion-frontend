@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getSessionNotes, getProfile, saveProfile, SessionNote } from '../lib/api'
-import { Button } from '../components/ui/button'
-import { LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail, CheckCircle } from 'lucide-react'
+import { LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail, CheckCircle, Flame, Trophy } from 'lucide-react'
 
 const SCENARIO_ICONS: Record<string, React.ReactNode> = {
   interview: <Mic  className="w-6 h-6 text-white" />,
@@ -140,6 +139,70 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* Progress panel */}
+        {notes.length > 0 && (() => {
+          // Sessions per scenario
+          const counts: Record<string, number> = {}
+          for (const n of notes) counts[n.scenario] = (counts[n.scenario] || 0) + 1
+          const total = notes.length
+
+          // Weekly streak: count distinct calendar weeks with at least 1 session
+          const weekSet = new Set(notes.map(n => {
+            const d = new Date(n.created_at)
+            const jan1 = new Date(d.getFullYear(), 0, 1)
+            return `${d.getFullYear()}-W${Math.ceil(((d.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7)}`
+          }))
+          const streak = weekSet.size
+
+          return (
+            <div className="panel-card p-6 mb-8">
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-500" />
+                  Your Progress
+                </h2>
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="text-xs font-bold text-amber-600">{streak} week{streak !== 1 ? 's' : ''} active</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {SCENARIOS.map(s => {
+                  const count = counts[s.key] || 0
+                  const dots = Math.min(count, 8)
+                  return (
+                    <div key={s.key} className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${s.iconClass}`} style={{ transform: 'scale(0.85)' }}>
+                          {SCENARIO_ICONS[s.key]}
+                        </div>
+                        <span className="text-xs font-semibold text-slate-600 truncate">{s.title}</span>
+                      </div>
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {Array.from({ length: dots }).map((_, i) => (
+                          <span key={i} className="w-2.5 h-2.5 rounded-full"
+                                style={{ background: s.key === 'interview' ? '#1C88FC' : s.key === 'inbox' ? '#8b5cf6' : '#10b981' }} />
+                        ))}
+                        {count === 0 && <span className="text-xs text-slate-300 font-medium">No sessions yet</span>}
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium">{count} session{count !== 1 ? 's' : ''}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-400">{total} total session{total !== 1 ? 's' : ''} completed</span>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(total, 10) }).map((_, i) => (
+                    <span key={i} className="w-2 h-2 rounded-full bg-primary/60" />
+                  ))}
+                  {total > 10 && <span className="text-xs text-slate-400 ml-1">+{total - 10}</span>}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Your Profile */}
         <div className="panel-card p-7 mb-12">
