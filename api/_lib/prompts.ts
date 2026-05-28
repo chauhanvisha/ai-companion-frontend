@@ -39,6 +39,11 @@ export function buildSystemPrompt(opts: {
         const date = note.created_at?.slice(0, 10) || ''
         block += `- [${date}] ${name}: ${note.notes}\n`
       }
+      block +=
+        '\nIMPORTANT: In your very first message this session, explicitly reference what the student ' +
+        'worked on last time. For example: "Last time we worked on [X] — you were [making progress / ' +
+        'struggling with Y]. Want to pick up there, or try something different today?" ' +
+        'Make the memory tangible. The student should feel seen, not just analysed.\n'
     }
 
     block +=
