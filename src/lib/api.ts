@@ -8,6 +8,15 @@ function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` }
 }
 
+/** If any API call comes back 401, clear session and redirect to login */
+function handle401(res: Response) {
+  if (res.status === 401) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('username')
+    window.location.href = '/'
+  }
+}
+
 export async function register(username: string, password: string) {
   const res = await fetch(`${BASE}/api/auth/register`, {
     method: 'POST',
@@ -94,6 +103,7 @@ export function streamChat(
     body: JSON.stringify({ messages, scenario, nudge_limit }),
   }).then(async (res) => {
     if (!res.ok) {
+      handle401(res)
       const data = await res.json()
       onError(data.detail || 'Stream failed')
       return
