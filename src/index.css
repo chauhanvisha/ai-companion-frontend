@@ -4,22 +4,26 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 214 60% 97%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --primary: 210 97% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
+    --border: 214 32% 89%;
+    --input: 214 32% 89%;
     --ring: 210 97% 55%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
   }
 
   * {
@@ -27,7 +31,69 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
     font-family: 'Poppins', 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(160deg, #deeeff 0%, #f0f6ff 45%, #eef2ff 100%);
+    min-height: 100vh;
   }
 }
+
+/* 3D scenario card hover effect */
+.scenario-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 0 rgba(28, 136, 252, 0.15), 0 8px 28px rgba(0, 0, 0, 0.08);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid rgba(28, 136, 252, 0.06);
+}
+.scenario-card:hover {
+  transform: translateY(-10px) perspective(900px) rotateX(4deg);
+  box-shadow: 0 3px 0 0 #1C88FC, 0 24px 56px rgba(28, 136, 252, 0.22), 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: rgba(28, 136, 252, 0.2);
+}
+.scenario-card:hover .scenario-card-btn {
+  background: #1C88FC;
+  color: white;
+  border-color: #1C88FC;
+}
+
+/* Elevated panel card (profile, session notes, etc.) */
+.panel-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 0 0 rgba(28, 136, 252, 0.08), 0 6px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(28, 136, 252, 0.06);
+}
+
+/* Auth / onboarding centered card */
+.auth-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 4px 0 0 rgba(28, 136, 252, 0.18), 0 16px 48px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(28, 136, 252, 0.08);
+}
+
+/* Recent session mini-cards */
+.session-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 0 0 rgba(28, 136, 252, 0.1), 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  border: 1px solid rgba(28, 136, 252, 0.06);
+  cursor: pointer;
+}
+.session-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 2px 0 0 #1C88FC, 0 12px 32px rgba(28, 136, 252, 0.18);
+}
+
+/* Icon box glow */
+.icon-box-blue   { background: linear-gradient(135deg, #1C88FC, #0d6fdd); box-shadow: 0 8px 24px rgba(28, 136, 252, 0.4); }
+.icon-box-violet { background: linear-gradient(135deg, #8b5cf6, #7c3aed); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4); }
+.icon-box-green  { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4); }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(28, 136, 252, 0.2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(28, 136, 252, 0.4); }

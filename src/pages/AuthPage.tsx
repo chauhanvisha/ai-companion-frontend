@@ -1,16 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login, register, getProfile } from '../lib/api'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 
 export default function AuthPage() {
-  const [tab, setTab] = useState<'login' | 'signup'>('login')
+  const [tab, setTab]           = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [error, setError]       = useState('')
+  const [loading, setLoading]   = useState(false)
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -18,22 +15,19 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
     try {
-      const fn = tab === 'login' ? login : register
+      const fn   = tab === 'login' ? login : register
       const data = await fn(username.trim(), password)
 
-      // On signup: clear all old chat history (brand new user)
-      // On login: only clear chat history belonging to OTHER users
       Object.keys(localStorage).forEach(k => {
         if (k.startsWith('chat_history_')) {
-          const belongsToThisUser = k.startsWith(`chat_history_${data.username}_`)
-          if (tab === 'signup' || !belongsToThisUser) localStorage.removeItem(k)
+          const mine = k.startsWith(`chat_history_${data.username}_`)
+          if (tab === 'signup' || !mine) localStorage.removeItem(k)
         }
       })
 
-      localStorage.setItem('token', data.token)
+      localStorage.setItem('token',    data.token)
       localStorage.setItem('username', data.username)
 
-      // Check if profile already exists — skip onboarding if so
       const profile = await getProfile()
       if (profile?.field || profile?.target_role || profile?.school) {
         navigate('/dashboard')
@@ -48,76 +42,96 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo / brand */}
+
+        {/* Brand */}
         <div className="text-center mb-8">
-          <img src="/highview-logo.png" alt="HighView" className="h-10 w-auto mx-auto mb-2" />
-          <h1 className="text-2xl font-bold text-foreground tracking-tight mt-3">SEP AI Coach</h1>
-          <p className="text-muted-foreground mt-1">Your personal early-career coach</p>
+          <img src="/highview-logo.png" alt="HighView" className="h-10 w-auto mx-auto" />
+          <h1 className="text-2xl font-extrabold text-slate-800 mt-4 tracking-tight">SEP AI Coach</h1>
+          <p className="text-slate-500 mt-1 font-medium">Your personal early-career coach</p>
         </div>
 
-        <Card className="shadow-xl border-0 shadow-slate-200/80">
-          <CardHeader className="pb-4">
-            {/* Tabs */}
-            <div className="flex rounded-lg bg-muted p-1 gap-1">
-              {(['login', 'signup'] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => { setTab(t); setError('') }}
-                  className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                    tab === t
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {t === 'login' ? 'Log In' : 'Sign Up'}
-                </button>
-              ))}
-            </div>
-            <CardTitle className="mt-4 text-xl">
+        {/* Card */}
+        <div className="auth-card px-8 py-8">
+
+          {/* Tab switcher */}
+          <div className="flex rounded-2xl bg-slate-100 p-1 gap-1 mb-7">
+            {(['login', 'signup'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setError('') }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  tab === t
+                    ? 'bg-white text-primary shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {t === 'login' ? 'Log In' : 'Sign Up'}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-slate-800">
               {tab === 'login' ? 'Welcome back' : 'Create your account'}
-            </CardTitle>
-            <CardDescription>
-              {tab === 'login' ? 'Sign in to continue your coaching sessions' : 'Start your coaching journey today'}
-            </CardDescription>
-          </CardHeader>
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              {tab === 'login'
+                ? 'Sign in to continue your coaching sessions'
+                : 'Start your coaching journey today'}
+            </p>
+          </div>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Username</label>
-                <Input
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder="Enter your username"
-                  required
-                  autoFocus
-                />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Username</label>
+              <input
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                required
+                autoFocus
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
+                  text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+                  focus:ring-primary/30 focus:border-primary/50 transition-all"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
+                  text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+                  focus:ring-primary/30 focus:border-primary/50 transition-all"
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 font-medium">
+                {error}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Password</label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
+            )}
 
-              {error && (
-                <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl bg-primary text-white text-sm font-bold
+                hover:bg-primary/90 transition-all disabled:opacity-60
+                shadow-lg shadow-primary/25 mt-2"
+            >
+              {loading ? 'Please wait…' : tab === 'login' ? 'Log In' : 'Create Account'}
+            </button>
+          </form>
+        </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                {loading ? 'Please wait...' : tab === 'login' ? 'Log In' : 'Create Account'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <p className="text-center text-xs text-slate-400 mt-6">
+          HighView · SEP AI Coach © 2025
+        </p>
       </div>
     </div>
   )

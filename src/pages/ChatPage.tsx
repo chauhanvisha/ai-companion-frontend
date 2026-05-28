@@ -1,37 +1,39 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { streamChat, summarizeSession, getChatHistory, saveChatHistory, clearChatHistory, saveProfile, getProfile, Message } from '../lib/api'
-import { Button } from '../components/ui/button'
-import { ArrowLeft, Send, RotateCcw, Pencil, User } from 'lucide-react'
+import {
+  streamChat, summarizeSession, getChatHistory, saveChatHistory,
+  clearChatHistory, saveProfile, getProfile, Message,
+} from '../lib/api'
+import { ArrowLeft, Send, RotateCcw, Pencil, User, CheckCircle } from 'lucide-react'
 
-const SCENARIOS: Record<string, { icon: string; title: string }> = {
-  interview: { icon: '🎯', title: 'Interview Prep' },
-  inbox:     { icon: '📥', title: 'Inbox Reset' },
-  email:     { icon: '✉️',  title: 'Email Writing' },
+const SCENARIOS: Record<string, { emoji: string; title: string; color: string }> = {
+  interview: { emoji: '🎯', title: 'Interview Prep',  color: '#1C88FC' },
+  inbox:     { emoji: '📥', title: 'Inbox Reset',    color: '#8b5cf6' },
+  email:     { emoji: '✉️',  title: 'Email Writing',  color: '#10b981' },
 }
 
 export default function ChatPage() {
   const { scenario = 'interview' } = useParams<{ scenario: string }>()
-  const meta = SCENARIOS[scenario] || { icon: '💬', title: scenario }
+  const meta     = SCENARIOS[scenario] || { emoji: '💬', title: scenario, color: '#1C88FC' }
   const navigate = useNavigate()
 
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
+  const [messages,  setMessages]  = useState<Message[]>([])
+  const [input,     setInput]     = useState('')
   const [streaming, setStreaming] = useState(false)
   const [nudgeLimit, setNudgeLimit] = useState(2)
-  const [loading, setLoading] = useState(true)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [loading,   setLoading]   = useState(true)
+  const bottomRef    = useRef<HTMLDivElement>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textareaRef  = useRef<HTMLTextAreaElement>(null)
 
-  // Profile sidebar state
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [profileField, setProfileField] = useState('')
+  // Profile sidebar
+  const [sidebarOpen,       setSidebarOpen]       = useState(false)
+  const [profileField,      setProfileField]      = useState('')
   const [profileTargetRole, setProfileTargetRole] = useState('')
-  const [profileSchool, setProfileSchool] = useState('')
-  const [profileSaved, setProfileSaved] = useState(false)
-  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileSchool,     setProfileSchool]     = useState('')
+  const [profileSaved,      setProfileSaved]      = useState(false)
+  const [profileSaving,     setProfileSaving]     = useState(false)
 
-  // Load profile on mount
   useEffect(() => {
     getProfile().then((p) => {
       if (p) {
@@ -42,7 +44,6 @@ export default function ChatPage() {
     }).catch(() => {})
   }, [])
 
-  // Load history from Supabase on mount
   useEffect(() => {
     setLoading(true)
     getChatHistory(scenario).then(history => {
@@ -61,12 +62,10 @@ export default function ChatPage() {
     })
   }, [scenario])
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Debounced save to Supabase after every message change
   function scheduleSave(msgs: Message[]) {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
@@ -77,20 +76,17 @@ export default function ChatPage() {
   function sendOpener() {
     sendMessage([{
       role: 'user',
-      content: `[The student just selected the ${meta.title} scenario. Start directly with your opening for that coaching flow.]`
+      content: `[The student just selected the ${meta.title} scenario. Start directly with your opening for that coaching flow.]`,
     }], true)
   }
 
   function sendMessage(msgs: Message[], isOpener = false) {
     setStreaming(true)
     let accumulated = ''
-
     setMessages(prev => [...prev, { role: 'assistant', content: '' }])
 
     streamChat(
-      msgs,
-      scenario,
-      nudgeLimit,
+      msgs, scenario, nudgeLimit,
       (chunk) => {
         accumulated += chunk
         setMessages(prev => {
@@ -106,10 +102,7 @@ export default function ChatPage() {
           setMessages(opener)
           scheduleSave(opener)
         } else {
-          setMessages(prev => {
-            scheduleSave(prev)
-            return prev
-          })
+          setMessages(prev => { scheduleSave(prev); return prev })
         }
       },
       (err) => {
@@ -119,7 +112,7 @@ export default function ChatPage() {
           updated[updated.length - 1] = { role: 'assistant', content: `Error: ${err}` }
           return updated
         })
-      }
+      },
     )
   }
 
@@ -127,6 +120,9 @@ export default function ChatPage() {
     const text = input.trim()
     if (!text || streaming) return
     setInput('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '44px'
+    }
     const userMsg: Message = { role: 'user', content: text }
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
@@ -161,68 +157,79 @@ export default function ChatPage() {
     try {
       await saveProfile(profileField, profileTargetRole, profileSchool)
       setProfileSaved(true)
-      setTimeout(() => setProfileSaved(false), 2000)
+      setTimeout(() => setProfileSaved(false), 2500)
     } catch {
-      // silently ignore
+      // ignore
     } finally {
       setProfileSaving(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(160deg, #deeeff 0%, #f0f6ff 45%, #eef2ff 100%)' }}>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2 shrink-0">
+      <header className="shrink-0 bg-white/80 backdrop-blur-md border-b border-blue-100/80 z-50"
+              style={{ boxShadow: '0 2px 16px rgba(28,136,252,0.07)' }}>
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-3">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500
+              hover:text-primary hover:bg-blue-50 transition-all shrink-0"
+          >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Dashboard</span>
-          </Button>
+          </button>
+
           <img src="/highview-logo.png" alt="HighView" className="h-6 w-auto hidden sm:block" />
 
-          {/* Mobile profile toggle — hidden on sm+ */}
-          <Button
-            variant="ghost"
-            size="sm"
+          {/* Mobile profile toggle */}
+          <button
             onClick={() => setSidebarOpen(prev => !prev)}
-            className="sm:hidden shrink-0 p-2"
+            className="sm:hidden shrink-0 p-2 rounded-xl hover:bg-blue-50 transition-all"
             aria-label="Toggle profile"
           >
-            <User className="w-4 h-4" />
-          </Button>
+            <User className="w-4 h-4 text-slate-500" />
+          </button>
 
           <div className="flex-1 flex items-center gap-2 min-w-0">
-            <span className="text-xl">{meta.icon}</span>
-            <h1 className="font-semibold text-foreground truncate">{meta.title}</h1>
+            <span className="text-xl">{meta.emoji}</span>
+            <h1 className="font-bold text-slate-800 truncate">{meta.title}</h1>
           </div>
+
           <div className="flex items-center gap-3 shrink-0">
             <div className="hidden sm:flex items-center gap-2">
-              <label className="text-xs text-muted-foreground whitespace-nowrap">Nudges:</label>
+              <label className="text-xs text-slate-400 font-medium whitespace-nowrap">Nudges:</label>
               <select
                 value={nudgeLimit}
                 onChange={e => setNudgeLimit(Number(e.target.value))}
-                className="text-xs border border-input rounded px-2 py-1 bg-background focus:ring-2 focus:ring-ring"
+                className="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white
+                  text-slate-600 focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
               >
                 {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleNewConversation} disabled={streaming} className="gap-1">
+            <button
+              onClick={handleNewConversation}
+              disabled={streaming}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold
+                text-slate-500 hover:text-primary hover:bg-blue-50 transition-all disabled:opacity-50"
+            >
               <RotateCcw className="w-4 h-4" />
               <span className="hidden sm:inline text-xs">New</span>
-            </Button>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Body: sidebar + chat */}
-      <div className="flex flex-1 max-w-5xl w-full mx-auto">
+      <div className="flex flex-1 min-h-0 max-w-5xl w-full mx-auto">
 
-        {/* Profile Sidebar — always visible on sm+, overlay on mobile when open */}
+        {/* Sidebar */}
         <>
-          {/* Mobile overlay backdrop */}
           {sidebarOpen && (
             <div
-              className="sm:hidden fixed inset-0 z-30 bg-black/30"
+              className="sm:hidden fixed inset-0 z-30 bg-black/20 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
           )}
@@ -231,104 +238,108 @@ export default function ChatPage() {
             className={`
               ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
               sm:translate-x-0
-              fixed sm:static
-              top-16 left-0 bottom-0
+              fixed sm:static top-16 left-0 bottom-0
               z-40 sm:z-auto
               w-60 shrink-0
-              bg-white border-r border-border
-              transition-transform duration-200 ease-in-out
               flex flex-col
-              px-4 py-5
+              px-4 py-5 gap-4
               overflow-y-auto
+              transition-transform duration-200 ease-in-out
             `}
+            style={{
+              background: 'white',
+              borderRight: '1px solid rgba(28,136,252,0.08)',
+              boxShadow: 'sm:none, 4px 0 24px rgba(0,0,0,0.06)',
+            }}
           >
-            <div className="flex items-center gap-2 mb-5">
-              <Pencil className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Your Profile</h2>
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <div className="w-7 h-7 rounded-lg icon-box-blue flex items-center justify-center">
+                <Pencil className="w-3.5 h-3.5 text-white" />
+              </div>
+              <h2 className="text-sm font-bold text-slate-800">Your Profile</h2>
             </div>
 
-            <div className="flex flex-col gap-4 flex-1">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground font-medium">Studying</label>
-                <input
-                  type="text"
-                  value={profileField}
-                  onChange={e => setProfileField(e.target.value)}
-                  placeholder="e.g. Computer Science"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
-                    placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground font-medium">Goal</label>
-                <input
-                  type="text"
-                  value={profileTargetRole}
-                  onChange={e => setProfileTargetRole(e.target.value)}
-                  placeholder="e.g. Product Manager"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
-                    placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground font-medium">School</label>
-                <input
-                  type="text"
-                  value={profileSchool}
-                  onChange={e => setProfileSchool(e.target.value)}
-                  placeholder="e.g. Stanford"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm
-                    placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
+            <div className="flex flex-col gap-3 flex-1">
+              {[
+                { label: 'Studying', value: profileField,      setter: setProfileField,      placeholder: 'e.g. Computer Science' },
+                { label: 'Goal',     value: profileTargetRole, setter: setProfileTargetRole, placeholder: 'e.g. Product Manager'  },
+                { label: 'School',   value: profileSchool,     setter: setProfileSchool,     placeholder: 'e.g. Stanford'          },
+              ].map(({ label, value, setter, placeholder }) => (
+                <div key={label} className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</label>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={e => setter(e.target.value)}
+                    placeholder={placeholder}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm
+                      text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+                      focus:ring-primary/30 focus:border-primary/50 transition-all"
+                  />
+                </div>
+              ))}
             </div>
 
-            <Button
+            <button
               onClick={handleSaveProfile}
               disabled={profileSaving}
-              size="sm"
-              className="mt-5 w-full"
-              variant={profileSaved ? 'outline' : 'default'}
+              className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2
+                ${profileSaved
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/30'
+                }`}
             >
-              {profileSaved ? 'Saved ✓' : 'Save'}
-            </Button>
+              {profileSaved && <CheckCircle className="w-4 h-4" />}
+              {profileSaved ? 'Saved!' : profileSaving ? 'Saving…' : 'Save'}
+            </button>
           </aside>
         </>
 
         {/* Chat column */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 min-h-0">
+
           {/* Messages */}
-          <main className="flex-1 px-4 py-6 space-y-6">
+          <main className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
             {loading ? (
               <div className="flex justify-center py-20">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                  <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
-                  <span className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+                <div className="flex gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full animate-bounce [animation-delay:0ms]"
+                        style={{ background: meta.color, opacity: 0.5 }} />
+                  <span className="w-2.5 h-2.5 rounded-full animate-bounce [animation-delay:150ms]"
+                        style={{ background: meta.color, opacity: 0.5 }} />
+                  <span className="w-2.5 h-2.5 rounded-full animate-bounce [animation-delay:300ms]"
+                        style={{ background: meta.color, opacity: 0.5 }} />
                 </div>
               </div>
             ) : (
               messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div key={i} className={`flex items-end gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm mr-3 mt-1 shrink-0">
+                    <div
+                      className="w-9 h-9 rounded-2xl flex items-center justify-center text-base shrink-0 mb-0.5"
+                      style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
+                               boxShadow: `0 4px 12px ${meta.color}40` }}
+                    >
                       🎓
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                    className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                       msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-sm'
-                        : 'bg-muted text-foreground rounded-bl-sm'
+                        ? 'text-white rounded-br-sm'
+                        : 'bg-white text-slate-700 rounded-bl-sm'
                     }`}
+                    style={msg.role === 'user'
+                      ? { background: `linear-gradient(135deg, ${meta.color}, ${meta.color}dd)`,
+                          boxShadow: `0 4px 16px ${meta.color}35` }
+                      : { boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid rgba(28,136,252,0.06)' }
+                    }
                   >
                     {msg.content || (streaming && i === messages.length - 1 ? (
-                      <span className="flex gap-1 py-1">
-                        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:0ms]" />
-                        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:150ms]" />
-                        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce [animation-delay:300ms]" />
+                      <span className="flex gap-1 py-0.5">
+                        <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:0ms]" />
+                        <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:150ms]" />
+                        <span className="w-2 h-2 bg-slate-300 rounded-full animate-bounce [animation-delay:300ms]" />
                       </span>
                     ) : '')}
                   </div>
@@ -338,41 +349,46 @@ export default function ChatPage() {
             <div ref={bottomRef} />
           </main>
 
-          {/* Input */}
-          <div className="sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-border">
-            <div className="px-4 py-4">
-              <div className="flex gap-3 items-end">
-                <textarea
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message… (Enter to send, Shift+Enter for new line)"
-                  rows={1}
-                  disabled={streaming || loading}
-                  className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm
-                    placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring
-                    disabled:opacity-50 max-h-32 overflow-y-auto"
-                  style={{ minHeight: '44px' }}
-                  onInput={e => {
-                    const el = e.currentTarget
-                    el.style.height = 'auto'
-                    el.style.height = `${Math.min(el.scrollHeight, 128)}px`
-                  }}
-                />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || streaming || loading}
-                  size="default"
-                  className="rounded-xl h-11 w-11 p-0 shrink-0"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 text-center">
-                Enter to send · Shift+Enter for new line
-              </p>
+          {/* Input bar */}
+          <div className="shrink-0 px-4 py-4"
+               style={{ background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)',
+                        borderTop: '1px solid rgba(28,136,252,0.08)' }}>
+            <div className="flex gap-3 items-end">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message… (Enter to send, Shift+Enter for new line)"
+                rows={1}
+                disabled={streaming || loading}
+                className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
+                  text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+                  focus:ring-primary/30 focus:border-primary/50 transition-all
+                  disabled:opacity-50 max-h-32 overflow-y-auto"
+                style={{ minHeight: '44px' }}
+                onInput={e => {
+                  const el = e.currentTarget
+                  el.style.height = 'auto'
+                  el.style.height = `${Math.min(el.scrollHeight, 128)}px`
+                }}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || streaming || loading}
+                className="w-11 h-11 rounded-2xl flex items-center justify-center text-white
+                  transition-all disabled:opacity-40 shrink-0"
+                style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
+                         boxShadow: `0 4px 16px ${meta.color}40` }}
+              >
+                <Send className="w-4 h-4" />
+              </button>
             </div>
+            <p className="text-xs text-slate-400 mt-2 text-center">
+              Enter to send · Shift+Enter for new line
+            </p>
           </div>
+
         </div>
       </div>
     </div>
