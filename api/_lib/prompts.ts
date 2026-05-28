@@ -147,12 +147,20 @@ export const SESSION_SUMMARY_PROMPT =
   "• [what they did well]\n" +
   "NEXT: [use the student's own commitment if they stated one; otherwise write one concrete action, e.g. 'Practice your elevator pitch out loud and time yourself to stay under 90 seconds']"
 
+export interface CheckinData {
+  followed_through?:  string   // 'yes' | 'partially' | 'no'
+  confidence_rating?: number   // 1–5
+  focus_this_week?:   string
+  created_at?:        string
+}
+
 export function buildSystemPrompt(opts: {
   nudgeLimit:    number
   scenario?:     string
   profile?:      { field?: string; target_role?: string; school?: string } | null
   sessionNotes?: { scenario: string; notes: string; created_at: string }[]
   studentModel?: StudentModel | null
+  checkin?:      CheckinData | null
 }): string {
   const parts: string[] = []
 
@@ -217,6 +225,27 @@ export function buildSystemPrompt(opts: {
     block +=
       '\nAdapt ALL coaching — questions, examples, inbox emails, email recipients — to be ' +
       "relevant and realistic for this student's specific field and target role.\n"
+
+    // ── Weekly check-in context ────────────────────────────────────────────
+    if (opts.checkin) {
+      const c = opts.checkin
+      const date = c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'recently'
+      block += `\nWEEKLY CHECK-IN (completed ${date}):\n`
+      if (c.followed_through) {
+        const ftMap: Record<string, string> = { yes: 'Yes — followed through', partially: 'Partially', no: 'Did not follow through' }
+        block += `- Last action item: ${ftMap[c.followed_through] || c.followed_through}\n`
+      }
+      if (c.confidence_rating) {
+        const level = c.confidence_rating <= 2 ? 'low' : c.confidence_rating === 3 ? 'moderate' : 'high'
+        block += `- Confidence this week: ${c.confidence_rating}/5 (${level})\n`
+      }
+      if (c.focus_this_week) block += `- Student's stated focus: "${c.focus_this_week}"\n`
+      block +=
+        '\nUse the check-in naturally — if confidence is low (1–2), be extra warm and encouraging ' +
+        'in your opening. If they did not follow through, gently acknowledge it without judgment and ' +
+        "move forward. Reference their focus area when it's relevant. Don't recite the check-in back verbatim.\n"
+    }
+
     parts.push(block)
   }
 

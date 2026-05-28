@@ -14,9 +14,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { messages, scenario, nudge_limit = 2 } = req.body || {}
 
   const supabase = db()
-  const [profileRes, notesRes] = await Promise.all([
-    supabase.from('user_profiles').select('field,target_role,school,student_model').eq('username', username),
+  const [profileRes, notesRes, checkinRes] = await Promise.all([
+    supabase.from('user_profiles').select('field,target_role,school,student_model,weekly_checkin_enabled').eq('username', username),
     supabase.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(10),
+    supabase.from('weekly_checkins').select('followed_through,confidence_rating,focus_this_week,created_at').eq('username', username).order('created_at', { ascending: false }).limit(1),
   ])
 
   const profileRow   = profileRes.data?.[0] || null
@@ -29,7 +30,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const otherNotes   = allNotes.filter(n => n.scenario !== scenario)
   const sessionNotes = [...sameScenario, ...otherNotes].slice(0, 3)
 
-  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel })
+  // Check-in: only inject if enabled and done within last 7 days
+  const checkinEnabled = profileRow?.weekly_checkin_enabled === true
+  const latestCheckin  = checkinRes.data?.[0] || null
+  const checkinAgeDays = latestCheckin
+    ? (Date.now() - new Date(latestCheckin.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    : Infinity
+  const checkin = checkinEnabled && checkinAgeDays < 7 ? latestCheckin : null
+
+  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel, checkin })
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')

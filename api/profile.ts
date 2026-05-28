@@ -12,17 +12,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     const result = await client
       .from('user_profiles')
-      .select('field,target_role,school,student_model')
+      .select('field,target_role,school,student_model,weekly_checkin_enabled')
       .eq('username', username)
     return res.json(result.data?.[0] || {})
   }
 
   if (req.method === 'POST') {
-    const { field = '', target_role = '', school = '' } = req.body || {}
-    // Only update basic fields — never overwrite student_model from the profile form
+    const { field = '', target_role = '', school = '', weekly_checkin_enabled } = req.body || {}
+    // Build update object — only include weekly_checkin_enabled if explicitly passed
+    const update: Record<string, any> = { username, field, target_role, school }
+    if (typeof weekly_checkin_enabled === 'boolean') update.weekly_checkin_enabled = weekly_checkin_enabled
     const { error } = await client
       .from('user_profiles')
-      .upsert({ username, field, target_role, school }, { onConflict: 'username' })
+      .upsert(update, { onConflict: 'username' })
     if (error) return res.status(500).json({ detail: error.message })
     return res.json({ ok: true })
   }

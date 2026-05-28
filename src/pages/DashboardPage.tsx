@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getSessionNotes, getProfile, saveProfile,
-  SessionNote, StudentModel, parseSessionNotes,
+  getCheckinStatus, saveCheckin, saveWeeklyCheckinToggle,
+  SessionNote, StudentModel, CheckinData, parseSessionNotes,
 } from '../lib/api'
 import {
   LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail,
   CheckCircle, Flame, Trophy, ChevronDown, ChevronUp, Target,
+  CalendarCheck, X, Star,
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -128,6 +130,127 @@ function SkillBar({ label, value }: { label: string; value: number }) {
   )
 }
 
+// ─── Weekly check-in card ─────────────────────────────────────────────────────
+
+type CheckinStep = 'q1' | 'q2' | 'q3' | 'done'
+
+function CheckinCard({ onComplete, onDismiss }: {
+  onComplete: (data: Omit<CheckinData, 'created_at'>) => void
+  onDismiss:  () => void
+}) {
+  const [step,             setStep]             = useState<CheckinStep>('q1')
+  const [followedThrough,  setFollowedThrough]  = useState<string>('')
+  const [confidenceRating, setConfidenceRating] = useState<number>(0)
+  const [focusThisWeek,    setFocusThisWeek]    = useState('')
+  const [saving,           setSaving]           = useState(false)
+
+  async function handleSubmit() {
+    setSaving(true)
+    await onComplete({ followed_through: followedThrough, confidence_rating: confidenceRating, focus_this_week: focusThisWeek })
+    setSaving(false)
+  }
+
+  return (
+    <div className="panel-card p-6 mb-8 relative" style={{ borderLeft: '3px solid #1C88FC' }}>
+      <button onClick={onDismiss}
+        className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-slate-400">
+        <X className="w-4 h-4" />
+      </button>
+
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+          <CalendarCheck className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-slate-800">Weekly Check-in</h3>
+          <p className="text-xs text-slate-400">Quick 3 questions — takes 30 seconds</p>
+        </div>
+        <div className="ml-auto flex gap-1">
+          {(['q1','q2','q3'] as CheckinStep[]).map((s, i) => (
+            <span key={i} className="w-2 h-2 rounded-full transition-colors"
+              style={{ background: ['q1','q2','q3'].indexOf(step) >= i ? '#1C88FC' : '#e2e8f0' }} />
+          ))}
+        </div>
+      </div>
+
+      {step === 'q1' && (
+        <div>
+          <p className="text-sm font-semibold text-slate-700 mb-3">Did you follow through on your last action item?</p>
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { value: 'yes',       label: '✅ Yes, fully' },
+              { value: 'partially', label: '⚡ Partially' },
+              { value: 'no',        label: '❌ Not yet' },
+            ].map(opt => (
+              <button key={opt.value}
+                onClick={() => { setFollowedThrough(opt.value); setStep('q2') }}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all
+                  ${followedThrough === opt.value
+                    ? 'bg-primary text-white border-primary'
+                    : 'border-slate-200 text-slate-600 hover:border-primary/40 hover:bg-blue-50'}`}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 'q2' && (
+        <div>
+          <p className="text-sm font-semibold text-slate-700 mb-3">How confident are you feeling this week?</p>
+          <div className="flex gap-2">
+            {[1,2,3,4,5].map(n => (
+              <button key={n}
+                onClick={() => { setConfidenceRating(n); setStep('q3') }}
+                className="flex flex-col items-center gap-1 group">
+                <Star
+                  className="w-8 h-8 transition-all"
+                  style={{
+                    fill:   confidenceRating >= n ? '#f59e0b' : 'none',
+                    stroke: confidenceRating >= n ? '#f59e0b' : '#cbd5e1',
+                  }}
+                />
+                <span className="text-xs text-slate-400">{n}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === 'q3' && (
+        <div>
+          <p className="text-sm font-semibold text-slate-700 mb-3">What do you want to focus on this week?</p>
+          <textarea
+            value={focusThisWeek}
+            onChange={e => setFocusThisWeek(e.target.value)}
+            placeholder="e.g. Get better at answering conflict questions, or practice cold outreach emails…"
+            rows={2}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm
+              placeholder:text-slate-300 text-slate-700 focus:outline-none focus:ring-2
+              focus:ring-primary/30 focus:border-primary/50 resize-none transition-all mb-3"
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={saving || !focusThisWeek.trim()}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white
+              hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            {saving ? 'Saving…' : 'Done →'}
+          </button>
+        </div>
+      )}
+
+      {step === 'done' && (
+        <div className="flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+          <p className="text-sm text-slate-600">
+            <span className="font-semibold text-slate-800">Got it!</span> Your coach will reference this in your next session.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
@@ -136,6 +259,12 @@ export default function DashboardPage() {
 
   const [notes,        setNotes]        = useState<SessionNote[]>([])
   const [studentModel, setStudentModel] = useState<StudentModel | null>(null)
+
+  // Check-in state
+  const [checkinEnabled,  setCheckinEnabled]  = useState(false)
+  const [checkinDue,      setCheckinDue]      = useState(false)
+  const [checkinDismissed,setCheckinDismissed]= useState(false)
+  const [checkinDone,     setCheckinDone]     = useState(false)
 
   const [profileField,      setProfileField]      = useState('')
   const [profileTargetRole, setProfileTargetRole] = useState('')
@@ -152,9 +281,14 @@ export default function DashboardPage() {
         setProfileTargetRole(p.target_role || '')
         setProfileSchool(p.school || '')
         if (p.student_model) setStudentModel(p.student_model)
+        if (p.weekly_checkin_enabled) setCheckinEnabled(true)
       }
       setProfileLoaded(true)
     }).catch(() => setProfileLoaded(true))
+    getCheckinStatus().then((s) => {
+      setCheckinEnabled(s.enabled)
+      setCheckinDue(s.isDue)
+    }).catch(() => {})
   }, [])
 
   function logout() {
@@ -172,6 +306,19 @@ export default function DashboardPage() {
     } catch { /* ignore */ } finally {
       setProfileSaving(false)
     }
+  }
+
+  async function handleCheckinToggle(enabled: boolean) {
+    setCheckinEnabled(enabled)
+    await saveWeeklyCheckinToggle(enabled).catch(() => {})
+    // If just enabled and they've never done one, show it immediately
+    if (enabled) setCheckinDue(true)
+  }
+
+  async function handleCheckinComplete(data: Omit<CheckinData, 'created_at'>) {
+    await saveCheckin(data).catch(() => {})
+    setCheckinDone(true)
+    setCheckinDue(false)
   }
 
   const profileIsEmpty = profileLoaded && !profileField && !profileTargetRole && !profileSchool
@@ -248,6 +395,22 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Weekly Check-in card — shown when due and not dismissed */}
+        {checkinEnabled && checkinDue && !checkinDismissed && !checkinDone && (
+          <CheckinCard
+            onComplete={handleCheckinComplete}
+            onDismiss={() => setCheckinDismissed(true)}
+          />
+        )}
+        {checkinDone && (
+          <div className="panel-card p-4 mb-8 flex items-center gap-3" style={{ borderLeft: '3px solid #10b981' }}>
+            <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold">Check-in saved!</span> Your coach will reference this at the start of your next session.
+            </p>
+          </div>
+        )}
 
         {/* Scenario tiles */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12">
@@ -395,17 +558,37 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <button
-            onClick={handleSaveProfile}
-            disabled={profileSaving}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all
-              ${profileSaved
-                ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/30'}`}
-          >
-            {profileSaved && <CheckCircle className="w-4 h-4" />}
-            {profileSaved ? 'Saved!' : profileSaving ? 'Saving…' : 'Save changes'}
-          </button>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <button
+              onClick={handleSaveProfile}
+              disabled={profileSaving}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all
+                ${profileSaved
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                  : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/30'}`}
+            >
+              {profileSaved && <CheckCircle className="w-4 h-4" />}
+              {profileSaved ? 'Saved!' : profileSaving ? 'Saving…' : 'Save changes'}
+            </button>
+
+            {/* Weekly check-in toggle */}
+            <button
+              onClick={() => handleCheckinToggle(!checkinEnabled)}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all
+                ${checkinEnabled
+                  ? 'bg-blue-50 border-primary/30 text-primary'
+                  : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}
+            >
+              <CalendarCheck className="w-4 h-4" />
+              <span>Weekly check-in</span>
+              {/* Toggle pill */}
+              <span className={`relative inline-flex w-8 h-4 rounded-full transition-colors flex-shrink-0
+                ${checkinEnabled ? 'bg-primary' : 'bg-slate-200'}`}>
+                <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform
+                  ${checkinEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Recent sessions */}

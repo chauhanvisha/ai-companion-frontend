@@ -148,10 +148,47 @@ export interface StudentModel {
 }
 
 export interface Profile {
-  field?:         string
-  target_role?:   string
-  school?:        string
-  student_model?: StudentModel
+  field?:                   string
+  target_role?:             string
+  school?:                  string
+  student_model?:           StudentModel
+  weekly_checkin_enabled?:  boolean
+}
+
+export interface CheckinData {
+  followed_through?:   string   // 'yes' | 'partially' | 'no'
+  confidence_rating?:  number   // 1–5
+  focus_this_week?:    string
+  created_at?:         string
+}
+
+export interface CheckinStatus {
+  enabled: boolean
+  isDue:   boolean
+  latest:  CheckinData | null
+}
+
+export async function getCheckinStatus(): Promise<CheckinStatus> {
+  const res = await fetch(`${BASE}/api/checkin`, { headers: authHeaders() })
+  return res.json()
+}
+
+export async function saveCheckin(data: Omit<CheckinData, 'created_at'>) {
+  const res = await fetch(`${BASE}/api/checkin`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  })
+  return res.json()
+}
+
+export async function saveWeeklyCheckinToggle(enabled: boolean) {
+  const res = await fetch(`${BASE}/api/profile`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ weekly_checkin_enabled: enabled }),
+  })
+  return res.json()
 }
 
 /** Parse the • bullet + NEXT: line format produced by the session summary */
