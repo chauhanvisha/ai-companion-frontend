@@ -97,7 +97,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     res.write('data: [DONE]\n\n')
   } catch (e: any) {
-    res.write(`data: ${JSON.stringify({ error: e.message })}\n\n`)
+    console.error('[stream] Anthropic error:', e.message, e.status ?? '')
+    res.write(`data: ${JSON.stringify({ error: e.message || 'Stream failed' })}\n\n`)
+    res.write('data: [DONE]\n\n')
   } finally {
     res.end()
   }

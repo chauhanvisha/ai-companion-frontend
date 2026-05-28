@@ -123,8 +123,9 @@ export function streamChat(
           const payload = line.slice(6).trim()
           if (payload === '[DONE]') { onDone(); return }
           try {
-            const { text } = JSON.parse(payload)
-            if (text) onChunk(text)
+            const parsed = JSON.parse(payload)
+            if (parsed.error) { onError(parsed.error); return }
+            if (parsed.text)  onChunk(parsed.text)
           } catch {}
         }
       }
