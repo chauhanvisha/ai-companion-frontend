@@ -6,12 +6,17 @@ const SCENARIO_NAMES: Record<string, string> = {
 
 export const SESSION_SUMMARY_PROMPT =
   'You just finished a coaching session with a student. Based on the conversation above, ' +
-  'write exactly 3 bullet points summarizing:\n' +
+  'write exactly 3 bullet points summarizing the session, then one action item:\n' +
   '1. What the student worked on\n' +
   '2. One thing they struggled with or needs improvement\n' +
-  '3. One thing they did well or improved during this session\n\n' +
+  '3. One thing they did well or improved during this session\n' +
+  '4. One concrete, specific action the student should do before the next session\n\n' +
   "Be specific. Use the student's actual words or examples where possible.\n" +
-  "Format: plain bullet points starting with '• ', no headers, max 20 words each."
+  "Format exactly like this — 3 bullet points then one action line:\n" +
+  "• [what they worked on]\n" +
+  "• [struggle / improvement area]\n" +
+  "• [what they did well]\n" +
+  "NEXT: [one concrete action, e.g. 'Practice your elevator pitch out loud and time yourself to stay under 90 seconds']"
 
 export function buildSystemPrompt(opts: {
   nudgeLimit: number

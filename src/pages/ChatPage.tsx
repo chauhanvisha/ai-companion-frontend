@@ -4,7 +4,7 @@ import {
   streamChat, summarizeSession, getChatHistory, saveChatHistory,
   clearChatHistory, saveProfile, getProfile, Message,
 } from '../lib/api'
-import { ArrowLeft, Send, RotateCcw, Pencil, User, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Send, RotateCcw, Pencil, User, CheckCircle, Star, Zap, TrendingUp, ArrowRight } from 'lucide-react'
 
 const SCENARIOS: Record<string, { emoji: string; title: string; color: string }> = {
   interview: { emoji: '🎯', title: 'Interview Prep',  color: '#1C88FC' },
@@ -25,6 +25,12 @@ export default function ChatPage() {
   const bottomRef    = useRef<HTMLDivElement>(null)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const textareaRef  = useRef<HTMLTextAreaElement>(null)
+
+  // Debrief modal
+  const [debriefState,   setDebriefState]   = useState<null | 'loading' | 'ready'>(null)
+  const [debriefBullets, setDebriefBullets] = useState<string[]>([])
+  const [debriefAction,  setDebriefAction]  = useState('')
+  const [debriefNext,    setDebriefNext]    = useState<'back' | 'new'>('back')
 
   // Profile sidebar
   const [sidebarOpen,       setSidebarOpen]       = useState(false)
@@ -136,21 +142,62 @@ export default function ChatPage() {
     }
   }
 
-  async function handleBack() {
-    if (messages.length >= 4) {
-      await summarizeSession(messages, scenario).catch(() => {})
+  function parseDebrief(summary: string) {
+    const lines = summary.split('\n').map(l => l.trim()).filter(Boolean)
+    const bullets: string[] = []
+    let action = ''
+    for (const line of lines) {
+      if (line.startsWith('NEXT:')) {
+        action = line.replace('NEXT:', '').trim()
+      } else if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*')) {
+        bullets.push(line.replace(/^[•\-*]\s*/, '').trim())
+      }
     }
-    navigate('/dashboard')
+    return { bullets, action }
   }
 
-  async function handleNewConversation() {
-    if (messages.length >= 4) {
-      await summarizeSession(messages, scenario).catch(() => {})
+  async function triggerDebrief(afterAction: 'back' | 'new') {
+    if (messages.length < 4) {
+      if (afterAction === 'back') navigate('/dashboard')
+      else {
+        await clearChatHistory(scenario).catch(() => {})
+        setMessages([])
+        setTimeout(() => sendOpener(), 100)
+      }
+      return
     }
-    await clearChatHistory(scenario).catch(() => {})
-    setMessages([])
-    setTimeout(() => sendOpener(), 100)
+    setDebriefNext(afterAction)
+    setDebriefState('loading')
+    try {
+      const result = await summarizeSession(messages, scenario)
+      if (result?.summary) {
+        const { bullets, action } = parseDebrief(result.summary)
+        setDebriefBullets(bullets)
+        setDebriefAction(action)
+        setDebriefState('ready')
+      } else {
+        // summary failed — navigate away silently
+        dismissDebrief()
+      }
+    } catch {
+      dismissDebrief()
+    }
   }
+
+  async function dismissDebrief() {
+    setDebriefState(null)
+    if (debriefNext === 'back') {
+      navigate('/dashboard')
+    } else {
+      await clearChatHistory(scenario).catch(() => {})
+      setMessages([])
+      setTimeout(() => sendOpener(), 100)
+    }
+  }
+
+  function handleBack() { triggerDebrief('back') }
+
+  function handleNewConversation() { triggerDebrief('new') }
 
   async function handleSaveProfile() {
     setProfileSaving(true)
@@ -166,7 +213,107 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'linear-gradient(160deg, #deeeff 0%, #f0f6ff 45%, #eef2ff 100%)' }}>
+    <div className="h-screen flex flex-col overflow-hidden relative" style={{ background: 'linear-gradient(160deg, #deeeff 0%, #f0f6ff 45%, #eef2ff 100%)' }}>
+
+      {/* ===== DEBRIEF MODAL ===== */}
+      {debriefState && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center p-6"
+             style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(8px)' }}>
+
+          {debriefState === 'loading' && (
+            <div className="bg-white rounded-3xl p-10 flex flex-col items-center gap-4 max-w-sm w-full"
+                 style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
+              <div className="flex gap-1.5">
+                {[0, 150, 300].map(delay => (
+                  <span key={delay} className="w-3 h-3 rounded-full animate-bounce"
+                        style={{ background: meta.color, animationDelay: `${delay}ms` }} />
+                ))}
+              </div>
+              <p className="text-slate-500 text-sm font-medium">Saving your session recap…</p>
+            </div>
+          )}
+
+          {debriefState === 'ready' && (
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full"
+                 style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.2)' }}>
+
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
+                     style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}bb)`,
+                              boxShadow: `0 8px 24px ${meta.color}40` }}>
+                  🎓
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-800">Session Complete!</h2>
+                  <p className="text-sm text-slate-500">{meta.title} · here's what happened</p>
+                </div>
+              </div>
+
+              {/* Bullets */}
+              {debriefBullets.length > 0 && (
+                <div className="space-y-3 mb-6">
+                  {debriefBullets.map((bullet, i) => {
+                    const icons = [
+                      <TrendingUp key={0} className="w-4 h-4 shrink-0" style={{ color: meta.color }} />,
+                      <Zap key={1} className="w-4 h-4 shrink-0 text-amber-500" />,
+                      <Star key={2} className="w-4 h-4 shrink-0 text-emerald-500" />,
+                    ]
+                    const labels = ['Worked on', 'To improve', 'Did well']
+                    const colors = [
+                      { bg: `${meta.color}10`, border: `${meta.color}25` },
+                      { bg: '#fef3c710', border: '#fde68a50' },
+                      { bg: '#d1fae510', border: '#6ee7b750' },
+                    ]
+                    return (
+                      <div key={i} className="flex gap-3 p-3 rounded-2xl border"
+                           style={{ background: colors[i]?.bg || '#f8fafc', borderColor: colors[i]?.border || '#e2e8f0' }}>
+                        <div className="mt-0.5">{icons[i]}</div>
+                        <div>
+                          <span className="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+                            {labels[i] || ''}
+                          </span>
+                          <p className="text-sm text-slate-700 leading-relaxed">{bullet}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Action item */}
+              {debriefAction && (
+                <div className="rounded-2xl p-4 mb-6 border border-blue-200"
+                     style={{ background: `${meta.color}08` }}>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-1.5"
+                     style={{ color: meta.color }}>Before next time</p>
+                  <p className="text-sm text-slate-700 leading-relaxed font-medium">{debriefAction}</p>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={dismissDebrief}
+                  className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all"
+                  style={{ background: `linear-gradient(135deg, ${meta.color}, ${meta.color}cc)`,
+                           boxShadow: `0 4px 20px ${meta.color}40` }}
+                >
+                  {debriefNext === 'back' ? 'Back to Dashboard' : 'Start New Session'}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={dismissDebrief}
+                  className="px-5 py-3.5 rounded-2xl text-sm font-semibold text-slate-400
+                    hover:text-slate-600 hover:bg-slate-100 transition-all"
+                >
+                  Skip
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Header */}
       <header className="shrink-0 bg-white/80 backdrop-blur-md border-b border-blue-100/80 z-50"
