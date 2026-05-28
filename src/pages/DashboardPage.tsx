@@ -16,19 +16,19 @@ const SCENARIOS = [
   {
     key: 'interview',
     title: 'Interview Prep',
-    description: 'Practice mock questions and get real-time coaching feedback',
+    description: 'Leave with 2–3 sharper answers and feedback you can act on today.',
     iconClass: 'icon-box-blue',
   },
   {
     key: 'inbox',
     title: 'Inbox Reset',
-    description: 'Build a system to tame your overloaded inbox effectively',
+    description: 'Leave with a 4-step triage system you can use on your inbox right now.',
     iconClass: 'icon-box-violet',
   },
   {
     key: 'email',
     title: 'Email Writing',
-    description: 'Draft professional emails that make the right impression',
+    description: 'Leave with a draft you can actually send — polished and ready to go.',
     iconClass: 'icon-box-green',
   },
 ]
