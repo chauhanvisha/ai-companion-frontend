@@ -232,7 +232,13 @@ export default function ChatPage() {
     try {
       await saveProfile(profileField, profileTargetRole, profileSchool)
       setProfileSaved(true)
-      setTimeout(() => setProfileSaved(false), 2500)
+      // Auto-restart session with updated profile after a brief "Saved!" moment
+      setTimeout(async () => {
+        setProfileSaved(false)
+        await clearChatHistory(scenario).catch(() => {})
+        setMessages([])
+        sendOpener()
+      }, 1200)
     } catch {
       // ignore
     } finally {
