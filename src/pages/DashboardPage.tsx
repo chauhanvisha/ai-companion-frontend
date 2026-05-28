@@ -427,7 +427,7 @@ export default function DashboardPage() {
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-blue-100/80"
            style={{ boxShadow: '0 2px 16px rgba(28,136,252,0.07)' }}>
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <img src="/highview-logo.png" alt="HighView" className="h-7 w-auto" />
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500 hidden sm:block font-medium">Hi, {username}!</span>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="max-w-7xl mx-auto px-6 py-12">
 
         {/* Greeting */}
         <div className="mb-10 flex items-start justify-between flex-wrap gap-4">
