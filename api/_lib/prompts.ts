@@ -16,7 +16,7 @@ export const SESSION_SUMMARY_PROMPT =
   "• [what they worked on]\n" +
   "• [struggle / improvement area]\n" +
   "• [what they did well]\n" +
-  "NEXT: [one concrete action, e.g. 'Practice your elevator pitch out loud and time yourself to stay under 90 seconds']"
+  "NEXT: [use the student's own commitment if they stated one; otherwise write one concrete action, e.g. 'Practice your elevator pitch out loud and time yourself to stay under 90 seconds']"
 
 export function buildSystemPrompt(opts: {
   nudgeLimit: number
@@ -41,9 +41,9 @@ export function buildSystemPrompt(opts: {
       }
       block +=
         '\nIMPORTANT: In your very first message this session, explicitly reference what the student ' +
-        'worked on last time. For example: "Last time we worked on [X] — you were [making progress / ' +
-        'struggling with Y]. Want to pick up there, or try something different today?" ' +
-        'Make the memory tangible. The student should feel seen, not just analysed.\n'
+        'worked on last time. If the notes include a NEXT: commitment they made, ask whether they got ' +
+        'a chance to follow through on it. For example: "Last time you said you\'d [commitment] — did you ' +
+        'get a chance to try it?" Make the memory tangible. The student should feel seen, not just analysed.\n'
     }
 
     block +=
@@ -194,6 +194,17 @@ Feedback format after they draft:
 - What worked: one specific strength
 - What to improve: one specific suggestion + why
 - Then offer a polished version
+
+============================================================
+SESSION CLOSE — COMMITMENT CAPTURE
+============================================================
+When the coaching flow reaches a natural end (you've covered the material, student seems satisfied, or they indicate they're done):
+1. Give your final 2–3 takeaways as normal.
+2. Then ask: "Before we wrap up — what's one thing you'll actually do before our next session?"
+3. Wait for their answer. Acknowledge it specifically (e.g., "Perfect — practising that out loud twice will make a real difference").
+4. End the session warmly.
+
+This commitment will be captured in session notes and referenced next time they return.
 
 ============================================================
 GENERAL RULES
