@@ -28,6 +28,16 @@ const SCENARIO_COLOR: Record<string, string> = {
 const SCENARIO_BG: Record<string, string> = {
   interview: 'rgba(28,136,252,0.08)', inbox: 'rgba(139,92,246,0.08)', email: 'rgba(16,185,129,0.08)',
 }
+const SCENARIO_GRADIENT: Record<string, string> = {
+  interview: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+  inbox:     'linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)',
+  email:     'linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)',
+}
+const SCENARIO_IMG: Record<string, string> = {
+  interview: '/Consulting-rafiki.png',
+  inbox:     '/Inbox cleanup-amico.png',
+  email:     '/Editing body text-amico.png',
+}
 
 const SCENARIOS = [
   { key: 'interview', title: 'Interview Prep',  description: 'Leave with 2–3 sharper answers and feedback you can act on today.', iconClass: 'icon-box-blue'   },
@@ -478,21 +488,58 @@ export default function DashboardPage() {
         {/* Scenario tiles */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-12">
           {SCENARIOS.map(s => (
-            <div key={s.key} className="scenario-card p-7 cursor-pointer group"
+            <div key={s.key} className="scenario-card cursor-pointer group overflow-hidden"
                  onClick={() => navigate(`/chat/${s.key}`)}>
-              <div className="flex items-start justify-between mb-5">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${s.iconClass}`}>
-                  {SCENARIO_ICONS[s.key]}
-                </div>
-                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all mt-1" />
+
+              {/* Illustration area */}
+              <div
+                className="relative flex items-end justify-center overflow-hidden"
+                style={{
+                  height: 180,
+                  background: SCENARIO_GRADIENT[s.key],
+                }}
+              >
+                {/* subtle radial glow behind image */}
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `radial-gradient(ellipse at 50% 60%, ${SCENARIO_COLOR[s.key]}22 0%, transparent 70%)`,
+                }} />
+                <img
+                  src={SCENARIO_IMG[s.key]}
+                  alt={s.title}
+                  className="relative z-10 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1"
+                  style={{
+                    height: 158,
+                    width: 'auto',
+                    objectFit: 'contain',
+                    filter: `drop-shadow(0px 12px 20px ${SCENARIO_COLOR[s.key]}55)`,
+                  }}
+                />
+                {/* bottom fade into card */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 32,
+                  background: 'linear-gradient(to bottom, transparent, white)',
+                }} />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-1">{s.title}</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-5">{s.description}</p>
-              <button className="scenario-card-btn w-full py-2.5 px-4 rounded-xl border border-slate-200
-                text-sm font-semibold text-slate-600 flex items-center justify-between transition-all">
-                <span>Start session</span>
-                <span>→</span>
-              </button>
+
+              {/* Text body */}
+              <div className="px-6 pt-4 pb-6">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-lg font-bold text-slate-800">{s.title}</h3>
+                  <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all mt-0.5 flex-shrink-0" />
+                </div>
+                <p className="text-sm text-slate-500 leading-relaxed mb-5">{s.description}</p>
+                <button className="scenario-card-btn w-full py-2.5 px-4 rounded-xl border border-slate-200
+                  text-sm font-semibold text-slate-600 flex items-center justify-between transition-all">
+                  <span>Start session</span>
+                  <span>→</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
