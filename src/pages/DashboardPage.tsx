@@ -106,13 +106,41 @@ export default function DashboardPage() {
       <main className="max-w-5xl mx-auto px-6 py-12">
 
         {/* Greeting */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
-            Hi, {username}! 👋
-          </h1>
-          <p className="text-slate-500 mt-2 text-lg font-medium">
-            What would you like to work on today?
-          </p>
+        <div className="mb-10 flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
+              Hi, {username}! 👋
+            </h1>
+            <p className="text-slate-500 mt-2 text-lg font-medium">
+              What would you like to work on today?
+            </p>
+          </div>
+          {notes.length > 0 && (() => {
+            const thisWeek = notes.filter(n => {
+              const d = new Date(n.created_at)
+              const now = new Date()
+              const diff = (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24)
+              return diff <= 7
+            }).length
+            return (
+              <div className="flex items-center gap-3">
+                <div className="panel-card px-4 py-3 flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-amber-500" />
+                  <div>
+                    <p className="text-lg font-extrabold text-slate-800 leading-none">{thisWeek}</p>
+                    <p className="text-xs text-slate-400 font-medium">this week</p>
+                  </div>
+                </div>
+                <div className="panel-card px-4 py-3 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary" />
+                  <div>
+                    <p className="text-lg font-extrabold text-slate-800 leading-none">{notes.length}</p>
+                    <p className="text-xs text-slate-400 font-medium">total</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* Scenario tiles */}
