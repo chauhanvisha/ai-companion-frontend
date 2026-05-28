@@ -51,7 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model:      'claude-haiku-4-5',
       max_tokens: 512,
       system:     'You extract structured observations from coaching conversations. Return only valid JSON.',
-      messages:   [{ role: 'user', content: buildExtractionPrompt(existingModel, conversation) }],
+      messages:   [{ role: 'user', content: buildExtractionPrompt(existingModel, conversation, scenario) }],
     })
 
     const rawExtraction = (extractionRes.content[0] as any).text.trim()

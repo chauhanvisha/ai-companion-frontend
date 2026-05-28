@@ -1,18 +1,56 @@
 // ─── Student model type ──────────────────────────────────────────────────────
 export interface StudentModel {
-  communication_style?:    string
-  confidence_level?:       string
-  recurring_strengths?:    string[]
-  recurring_weaknesses?:   string[]
-  what_resonates?:         string[]
-  trajectory?:             string
+  communication_style?:      string
+  confidence_level?:         string
+  recurring_strengths?:      string[]
+  recurring_weaknesses?:     string[]
+  what_resonates?:           string[]
+  trajectory?:               string
   preferred_feedback_style?: string
-  sessions_total?:         number
-  last_updated?:           string
+  skill_scores?:             Record<string, number>   // e.g. { storytelling: 72, confidence: 58 }
+  sessions_total?:           number
+  last_updated?:             string
 }
 
+// ─── Skill definitions per scenario ─────────────────────────────────────────
+const SCENARIO_SKILLS: Record<string, { key: string; label: string }[]> = {
+  interview: [
+    { key: 'storytelling',   label: 'Storytelling (STAR)' },
+    { key: 'confidence',     label: 'Confidence' },
+    { key: 'specificity',    label: 'Specificity' },
+    { key: 'conciseness',    label: 'Conciseness' },
+  ],
+  email: [
+    { key: 'clarity',        label: 'Clarity' },
+    { key: 'professionalism',label: 'Professionalism' },
+    { key: 'structure',      label: 'Structure' },
+    { key: 'directness',     label: 'Directness' },
+  ],
+  inbox: [
+    { key: 'prioritization', label: 'Prioritization' },
+    { key: 'decisiveness',   label: 'Decisiveness' },
+  ],
+}
+
+export { SCENARIO_SKILLS }
+
 // ─── Post-session memory extraction prompt ───────────────────────────────────
-export function buildExtractionPrompt(existingModel: StudentModel, conversation: string): string {
+export function buildExtractionPrompt(
+  existingModel: StudentModel,
+  conversation:  string,
+  scenario?:     string,
+): string {
+  const skills = scenario ? SCENARIO_SKILLS[scenario] : null
+  const skillBlock = skills
+    ? `"skill_scores": {
+    // Score each skill 0–100 based only on what you OBSERVED in this session.
+    // Only include skills where you have at least 2 clear examples to judge.
+${skills.map(s => `    // "${s.key}": ${s.label}`).join('\n')}
+  }`
+    : `"skill_scores": {
+    // Score any skills clearly demonstrated in this session (0–100)
+  }`
+
   return `You are analyzing a coaching session to update a student's persistent memory profile.
 
 EXISTING STUDENT MODEL:
@@ -31,13 +69,15 @@ Return ONLY a valid JSON object. Only include fields where you saw CLEAR evidenc
   "recurring_weaknesses": ["specific pattern to work on — concrete, not generic"],
   "what_resonates": ["type of example or coaching approach that visibly clicked for them"],
   "trajectory": "one sentence about their improvement arc across sessions",
-  "preferred_feedback_style": "how they respond best to feedback (e.g. 'needs acknowledgment before critique')"
+  "preferred_feedback_style": "how they respond best to feedback (e.g. 'needs acknowledgment before critique')",
+  ${skillBlock}
 }
 
 STRICT RULES:
 - Only include fields with clear evidence from THIS conversation
 - Be specific: "deflects conflict questions by saying it resolved itself" not "needs work on conflict"
 - For array fields: only add items NOT already in the existing model
+- For skill_scores: only include skills where the conversation gives enough evidence (2+ data points). Scores reflect THIS session's performance — merging handles the running average.
 - If the session was short or nothing notable happened, return {}
 - Return raw JSON only — no markdown, no explanation, no code blocks`
 }
@@ -64,7 +104,22 @@ export function mergeStudentModel(existing: StudentModel, extracted: Partial<Stu
       const already = combined.some(e => e.toLowerCase().includes(item.toLowerCase().slice(0, 20)))
       if (!already) combined.push(item)
     }
-    if (combined.length > 0) (merged as any)[field] = combined.slice(0, 8) // cap at 8 per field
+    if (combined.length > 0) (merged as any)[field] = combined.slice(0, 8)
+  }
+
+  // Skill scores: exponential moving average (65% existing, 35% new)
+  if (extracted.skill_scores && typeof extracted.skill_scores === 'object') {
+    const existingScores = existing.skill_scores || {}
+    const updatedScores: Record<string, number> = { ...existingScores }
+    for (const [skill, newScore] of Object.entries(extracted.skill_scores)) {
+      if (typeof newScore === 'number' && newScore >= 0 && newScore <= 100) {
+        const prev = existingScores[skill]
+        updatedScores[skill] = prev !== undefined
+          ? Math.round(prev * 0.65 + newScore * 0.35)
+          : Math.round(newScore)
+      }
+    }
+    if (Object.keys(updatedScores).length > 0) merged.skill_scores = updatedScores
   }
 
   merged.sessions_total = (existing.sessions_total || 0) + 1
@@ -93,9 +148,9 @@ export const SESSION_SUMMARY_PROMPT =
   "NEXT: [use the student's own commitment if they stated one; otherwise write one concrete action, e.g. 'Practice your elevator pitch out loud and time yourself to stay under 90 seconds']"
 
 export function buildSystemPrompt(opts: {
-  nudgeLimit: number
-  scenario?: string
-  profile?: { field?: string; target_role?: string; school?: string } | null
+  nudgeLimit:    number
+  scenario?:     string
+  profile?:      { field?: string; target_role?: string; school?: string } | null
   sessionNotes?: { scenario: string; notes: string; created_at: string }[]
   studentModel?: StudentModel | null
 }): string {
@@ -115,7 +170,7 @@ export function buildSystemPrompt(opts: {
       block += `- Field of study: ${field}\n- Target role: ${target_role}\n`
     }
 
-    // ── Living student model (the intelligence layer) ───────────────────────
+    // ── Living student model ───────────────────────────────────────────────
     if (hasModel) {
       const m = opts.studentModel!
       block += '\nWHAT I KNOW ABOUT THIS STUDENT (updated after every session):\n'
@@ -130,10 +185,22 @@ export function buildSystemPrompt(opts: {
       if (m.preferred_feedback_style) block += `- Feedback style: ${m.preferred_feedback_style}\n`
       if (m.trajectory)               block += `- Progress arc: ${m.trajectory}\n`
       if (m.sessions_total)           block += `- Sessions completed: ${m.sessions_total}\n`
+
+      // Skill scores — highlight the lowest as the focus area
+      if (m.skill_scores && Object.keys(m.skill_scores).length > 0) {
+        const scores = m.skill_scores
+        const entries = Object.entries(scores).sort(([, a], [, b]) => a - b)
+        block += `- Skill scores: ${entries.map(([k, v]) => `${k} ${v}/100`).join(', ')}\n`
+        const lowestSkill = entries[0]
+        if (lowestSkill && lowestSkill[1] < 70) {
+          block += `- PRIORITY: "${lowestSkill[0]}" is at ${lowestSkill[1]}/100 — actively target this in your coaching today.\n`
+        }
+      }
+
       block += '\nUse this knowledge to adapt your coaching from the very first message — do not re-ask things you already know.\n'
     }
 
-    // ── Recent session history (for continuity / commitment follow-up) ──────
+    // ── Session history (prioritise same-scenario notes for continuity) ────
     if (opts.sessionNotes?.length) {
       block += '\nRECENT SESSION NOTES (most recent first):\n'
       for (const note of opts.sessionNotes) {

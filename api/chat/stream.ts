@@ -16,13 +16,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = db()
   const [profileRes, notesRes] = await Promise.all([
     supabase.from('user_profiles').select('field,target_role,school,student_model').eq('username', username),
-    supabase.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(3),
+    supabase.from('session_notes').select('scenario,notes,created_at').eq('username', username).order('created_at', { ascending: false }).limit(10),
   ])
 
   const profileRow   = profileRes.data?.[0] || null
   const profile      = profileRow ? { field: profileRow.field, target_role: profileRow.target_role, school: profileRow.school } : null
   const studentModel = profileRow?.student_model || null
-  const sessionNotes = notesRes.data || []
+
+  // Smart context selection: prioritise same-scenario notes, then most recent, cap at 3
+  const allNotes     = notesRes.data || []
+  const sameScenario = allNotes.filter(n => n.scenario === scenario)
+  const otherNotes   = allNotes.filter(n => n.scenario !== scenario)
+  const sessionNotes = [...sameScenario, ...otherNotes].slice(0, 3)
+
   const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel })
 
   res.setHeader('Content-Type', 'text/event-stream')

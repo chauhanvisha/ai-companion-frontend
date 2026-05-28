@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .select('scenario,notes,created_at')
     .eq('username', username)
     .order('created_at', { ascending: false })
-    .limit(3)
+    .limit(20)
 
   return res.json({ notes: result.data || [] })
 }

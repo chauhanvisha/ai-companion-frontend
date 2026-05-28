@@ -129,13 +129,42 @@ export interface Message {
 }
 
 export interface SessionNote {
-  scenario: string
-  notes: string
+  scenario:   string
+  notes:      string
   created_at: string
 }
 
+export interface StudentModel {
+  communication_style?:      string
+  confidence_level?:         string
+  recurring_strengths?:      string[]
+  recurring_weaknesses?:     string[]
+  what_resonates?:           string[]
+  trajectory?:               string
+  preferred_feedback_style?: string
+  skill_scores?:             Record<string, number>
+  sessions_total?:           number
+  last_updated?:             string
+}
+
 export interface Profile {
-  field?: string
-  target_role?: string
-  school?: string
+  field?:         string
+  target_role?:   string
+  school?:        string
+  student_model?: StudentModel
+}
+
+/** Parse the • bullet + NEXT: line format produced by the session summary */
+export function parseSessionNotes(raw: string): { bullets: string[]; action: string } {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+  const bullets: string[] = []
+  let action = ''
+  for (const line of lines) {
+    if (line.startsWith('NEXT:')) {
+      action = line.replace(/^NEXT:\s*/i, '').trim()
+    } else if (line.startsWith('•') || line.startsWith('-')) {
+      bullets.push(line.replace(/^[•\-]\s*/, '').trim())
+    }
+  }
+  return { bullets, action }
 }
