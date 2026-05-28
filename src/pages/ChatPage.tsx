@@ -544,7 +544,13 @@ export default function ChatPage() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type your message… (Enter to send, Shift+Enter for new line)"
+                placeholder={
+                  scenario === 'email'
+                    ? 'Paste your email situation or draft here, or just say what you need to write…'
+                    : scenario === 'inbox'
+                    ? 'Describe your inbox situation, or say "student" or "work" to get started…'
+                    : 'Type your message… (Enter to send, Shift+Enter for new line)'
+                }
                 rows={1}
                 disabled={streaming || loading}
                 className="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
