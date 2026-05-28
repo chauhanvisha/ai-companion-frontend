@@ -127,7 +127,7 @@ export function mergeStudentModel(existing: StudentModel, extracted: Partial<Stu
   return merged
 }
 
-const SCENARIO_NAMES: Record<string, string> = {
+export const SCENARIO_NAMES: Record<string, string> = {
   interview: 'Practice Interview',
   email: 'Professional Email Builder',
   inbox: 'Inbox Reset',
@@ -154,13 +154,21 @@ export interface CheckinData {
   created_at?:        string
 }
 
+export interface RelevantMoment {
+  content:    string
+  scenario:   string
+  created_at: string
+  similarity: number
+}
+
 export function buildSystemPrompt(opts: {
-  nudgeLimit:    number
-  scenario?:     string
-  profile?:      { field?: string; target_role?: string; school?: string } | null
-  sessionNotes?: { scenario: string; notes: string; created_at: string }[]
-  studentModel?: StudentModel | null
-  checkin?:      CheckinData | null
+  nudgeLimit:       number
+  scenario?:        string
+  profile?:         { field?: string; target_role?: string; school?: string } | null
+  sessionNotes?:    { scenario: string; notes: string; created_at: string }[]
+  studentModel?:    StudentModel | null
+  checkin?:         CheckinData | null
+  relevantMoments?: RelevantMoment[]
 }): string {
   const parts: string[] = []
 
@@ -225,6 +233,20 @@ export function buildSystemPrompt(opts: {
     block +=
       '\nAdapt ALL coaching — questions, examples, inbox emails, email recipients — to be ' +
       "relevant and realistic for this student's specific field and target role.\n"
+
+    // ── Semantically relevant past moments (pgvector) ─────────────────────
+    if (opts.relevantMoments?.length) {
+      block += '\nSEMANTICALLY RELEVANT PAST MOMENTS (retrieved based on today\'s session focus):\n'
+      for (const m of opts.relevantMoments) {
+        const name = SCENARIO_NAMES[m.scenario] || m.scenario
+        const date = m.created_at?.slice(0, 10) || ''
+        block += `- [${date}] ${name}: ${m.content}\n`
+      }
+      block +=
+        '\nThese past moments are the most relevant to what the student is working on today. ' +
+        'Reference specific details from them — name the exact thing they struggled with or achieved. ' +
+        'The student should feel you remember them precisely, not just in general.\n'
+    }
 
     // ── Weekly check-in context ────────────────────────────────────────────
     if (opts.checkin) {

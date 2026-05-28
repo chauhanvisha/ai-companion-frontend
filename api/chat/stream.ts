@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { db } from '../_lib/db'
 import { getUserFromRequest } from '../_lib/auth'
-import { buildSystemPrompt } from '../_lib/prompts'
+import { buildSystemPrompt, SCENARIO_NAMES, RelevantMoment } from '../_lib/prompts'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ detail: 'Method not allowed' })
@@ -38,7 +39,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : Infinity
   const checkin = checkinEnabled && checkinAgeDays < 7 ? latestCheckin : null
 
-  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel, checkin })
+  // ── Semantic memory: retrieve most relevant past moments via pgvector ────
+  let relevantMoments: RelevantMoment[] = []
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+      // Build a query that captures the focus of today's session
+      const lowestSkill = studentModel?.skill_scores
+        ? Object.entries(studentModel.skill_scores).sort(([, a], [, b]) => a - b)[0]?.[0]
+        : null
+      const queryParts = [
+        SCENARIO_NAMES[scenario] || scenario,
+        lowestSkill   ? `focus area: ${lowestSkill}`            : '',
+        checkin?.focus_this_week ? `student goal: ${checkin.focus_this_week}` : '',
+      ].filter(Boolean)
+      const queryText = queryParts.join(', ')
+
+      const embRes = await openai.embeddings.create({
+        model: 'text-embedding-3-small',
+        input: queryText,
+      })
+      const queryEmbedding = embRes.data[0].embedding
+
+      // Similarity search via Supabase RPC
+      const { data: moments } = await supabase.rpc('match_coaching_moments', {
+        query_embedding: queryEmbedding,
+        match_threshold: 0.4,
+        match_count:     3,
+        filter_username: username,
+      })
+      relevantMoments = (moments || []) as RelevantMoment[]
+    } catch { /* fail silently — semantic memory is non-critical */ }
+  }
+
+  const systemPrompt = buildSystemPrompt({ nudgeLimit: nudge_limit, scenario, profile, sessionNotes, studentModel, checkin, relevantMoments })
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')

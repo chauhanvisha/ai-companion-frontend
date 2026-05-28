@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { db } from '../_lib/db'
 import { getUserFromRequest } from '../_lib/auth'
 import { SESSION_SUMMARY_PROMPT, buildExtractionPrompt, mergeStudentModel, StudentModel } from '../_lib/prompts'
@@ -31,7 +32,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await supabase.from('session_notes').insert({ username, scenario, notes: summary })
 
     // ── 2. Memory extraction — update the living student model ────────────────
-    // Load existing student_model
     const { data: profileData } = await supabase
       .from('user_profiles')
       .select('student_model')
@@ -40,13 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const existingModel: StudentModel = (profileData?.student_model as StudentModel) || {}
 
-    // Build a readable conversation string for extraction
     const conversation = messages
       .filter((m: any) => !m.content.startsWith('[The student') && !m.content.startsWith('Error:'))
       .map((m: any) => `${m.role === 'user' ? 'STUDENT' : 'COACH'}: ${m.content}`)
       .join('\n\n')
 
-    // Call Claude for structured extraction (cheaper/faster model)
     const extractionRes = await client.messages.create({
       model:      'claude-haiku-4-5',
       max_tokens: 512,
@@ -55,22 +53,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     const rawExtraction = (extractionRes.content[0] as any).text.trim()
-
-    // Parse the JSON safely
     let extracted: Partial<StudentModel> = {}
     try {
-      // Strip markdown code blocks if Claude added them
       const clean = rawExtraction.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim()
       extracted = JSON.parse(clean)
-    } catch {
-      // Extraction parse failed — not critical, skip silently
+    } catch { /* silently skip bad extraction */ }
+
+    const updatedModel = mergeStudentModel(existingModel, extracted)
+    await supabase.from('user_profiles').upsert({ username, student_model: updatedModel })
+
+    // ── 3. Save skill score snapshot (for history graph) ──────────────────────
+    if (updatedModel.skill_scores && Object.keys(updatedModel.skill_scores).length > 0) {
+      await supabase.from('skill_score_snapshots')
+        .insert({ username, scenario, scores: updatedModel.skill_scores })
+        .then(() => {})
+        .catch(() => {}) // non-critical
     }
 
-    // Merge and save
-    const updatedModel = mergeStudentModel(existingModel, extracted)
-    await supabase
-      .from('user_profiles')
-      .upsert({ username, student_model: updatedModel })
+    // ── 4. Generate embedding for semantic memory (pgvector) ─────────────────
+    // Only runs if OPENAI_API_KEY is configured — silently skipped otherwise
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+        const embeddingRes = await openai.embeddings.create({
+          model: 'text-embedding-3-small',
+          input: summary,
+        })
+        const embedding = embeddingRes.data[0].embedding
+        await supabase.from('coaching_embeddings').insert({
+          username,
+          scenario,
+          content:   summary,
+          embedding: JSON.stringify(embedding),
+        })
+      } catch { /* embedding is non-critical — skip silently */ }
+    }
 
     return res.json({ ok: true, summary, studentModel: updatedModel })
 

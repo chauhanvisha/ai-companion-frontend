@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   getSessionNotes, getProfile, saveProfile,
   getCheckinStatus, saveCheckin, saveWeeklyCheckinToggle,
-  SessionNote, StudentModel, CheckinData, parseSessionNotes,
+  getScoreHistory,
+  SessionNote, StudentModel, CheckinData, ScoreSnapshot, parseSessionNotes,
 } from '../lib/api'
 import {
   LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail,
@@ -117,16 +118,57 @@ function SessionCard({ note, onClick }: { note: SessionNote; onClick: () => void
   )
 }
 
-function SkillBar({ label, value }: { label: string; value: number }) {
+function SkillBar({ label, value, history }: { label: string; value: number; history?: number[] }) {
   const color = scoreColor(value)
+  const first = history && history.length > 1 ? history[0] : null
+  const delta = first !== null ? value - first : 0
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-slate-500 w-28 flex-shrink-0 truncate">{label}</span>
+      <span className="text-xs text-slate-500 w-24 flex-shrink-0 truncate">{label}</span>
       <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
       </div>
-      <span className="text-xs font-bold w-8 text-right" style={{ color }}>{value}</span>
+      {history && history.length > 1
+        ? <Sparkline data={history} color={color} />
+        : <span className="w-16" />
+      }
+      <div className="flex items-center gap-1 w-14 justify-end flex-shrink-0">
+        <span className="text-xs font-bold" style={{ color }}>{value}</span>
+        {delta !== 0 && (
+          <span className="text-xs font-medium" style={{ color: delta > 0 ? '#10b981' : '#ef4444' }}>
+            {delta > 0 ? `+${delta}` : delta}
+          </span>
+        )}
+      </div>
     </div>
+  )
+}
+
+// ─── Sparkline (pure SVG, no library) ────────────────────────────────────────
+
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const W = 64, H = 22, PAD = 2
+  const vals = data.slice(-8)  // show last 8 points max
+  if (vals.length < 2) return <span className="w-16 inline-block" />
+  const min  = Math.min(...vals) - 5
+  const max  = Math.max(...vals) + 5
+  const rng  = Math.max(max - min, 1)
+  const step = (W - PAD * 2) / (vals.length - 1)
+  const pts  = vals.map((v, i) => {
+    const x = PAD + i * step
+    const y = H - PAD - ((v - min) / rng) * (H - PAD * 2)
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ flexShrink: 0 }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8"
+        strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+      {/* last point dot */}
+      {(() => {
+        const last = pts.split(' ').pop()!.split(',')
+        return <circle cx={last[0]} cy={last[1]} r="2.5" fill={color} />
+      })()}
+    </svg>
   )
 }
 
@@ -257,8 +299,9 @@ export default function DashboardPage() {
   const username = localStorage.getItem('username') || 'there'
   const navigate = useNavigate()
 
-  const [notes,        setNotes]        = useState<SessionNote[]>([])
-  const [studentModel, setStudentModel] = useState<StudentModel | null>(null)
+  const [notes,          setNotes]          = useState<SessionNote[]>([])
+  const [studentModel,   setStudentModel]   = useState<StudentModel | null>(null)
+  const [scoreSnapshots, setScoreSnapshots] = useState<ScoreSnapshot[]>([])
 
   // Check-in state
   const [checkinEnabled,  setCheckinEnabled]  = useState(false)
@@ -275,6 +318,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     getSessionNotes().then(setNotes).catch(() => {})
+    getScoreHistory().then(setScoreSnapshots).catch(() => {})
     getProfile().then((p) => {
       if (p) {
         setProfileField(p.field || '')
@@ -337,13 +381,32 @@ export default function DashboardPage() {
   const countByScenario: Record<string, number> = {}
   for (const n of notes) countByScenario[n.scenario] = (countByScenario[n.scenario] || 0) + 1
 
+  // Build per-skill history arrays from snapshots (chronological)
+  // skillHistory[skillKey] = [45, 52, 61, 71, ...]
+  const skillHistory: Record<string, number[]> = {}
+  for (const snap of scoreSnapshots) {
+    for (const [key, val] of Object.entries(snap.scores)) {
+      if (!skillHistory[key]) skillHistory[key] = []
+      skillHistory[key].push(val)
+    }
+  }
+  // Append current value if different from last snapshot
+  if (studentModel?.skill_scores) {
+    for (const [key, current] of Object.entries(studentModel.skill_scores)) {
+      const hist = skillHistory[key] || []
+      if (hist.length === 0 || hist[hist.length - 1] !== current) {
+        skillHistory[key] = [...hist, current]
+      }
+    }
+  }
+
   // Skill groups
-  const skillGroups: { scenarioKey: string; title: string; scores: { key: string; label: string; value: number }[] }[] = []
+  const skillGroups: { scenarioKey: string; title: string; scores: { key: string; label: string; value: number; history: number[] }[] }[] = []
   if (studentModel?.skill_scores && Object.keys(studentModel.skill_scores).length > 0) {
     for (const { key: scenarioKey, title } of SCENARIOS) {
       const scores = (SCENARIO_SKILL_KEYS[scenarioKey] || [])
         .filter(k => studentModel.skill_scores![k] !== undefined)
-        .map(k => ({ key: k, label: SKILL_LABELS[k] || k, value: studentModel.skill_scores![k] }))
+        .map(k => ({ key: k, label: SKILL_LABELS[k] || k, value: studentModel.skill_scores![k], history: skillHistory[k] || [] }))
       if (scores.length > 0) skillGroups.push({ scenarioKey, title, scores })
     }
   }
@@ -456,7 +519,7 @@ export default function DashboardPage() {
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{title}</span>
                   </div>
                   <div className="space-y-2.5">
-                    {scores.map(s => <SkillBar key={s.key} label={s.label} value={s.value} />)}
+                    {scores.map(s => <SkillBar key={s.key} label={s.label} value={s.value} history={s.history} />)}
                   </div>
                 </div>
               ))}

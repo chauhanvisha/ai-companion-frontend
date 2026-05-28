@@ -191,6 +191,18 @@ export async function saveWeeklyCheckinToggle(enabled: boolean) {
   return res.json()
 }
 
+export interface ScoreSnapshot {
+  scenario:   string
+  scores:     Record<string, number>
+  created_at: string
+}
+
+export async function getScoreHistory(): Promise<ScoreSnapshot[]> {
+  const res = await fetch(`${BASE}/api/score-history`, { headers: authHeaders() })
+  const data = await res.json()
+  return data.snapshots || []
+}
+
 /** Parse the • bullet + NEXT: line format produced by the session summary */
 export function parseSessionNotes(raw: string): { bullets: string[]; action: string } {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
