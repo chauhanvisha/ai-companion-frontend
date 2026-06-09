@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
 
         <div className="text-center mb-8">
           <img src="/highview-logo.png" alt="HighView" className="h-10 w-auto mx-auto" />
-          <h1 className="text-2xl font-extrabold text-slate-800 mt-4 tracking-tight">SEP AI Coach</h1>
+          <h1 className="text-2xl font-extrabold text-slate-800 mt-4 tracking-tight">AI Coach</h1>
         </div>
 
         <div className="auth-card px-8 py-8">
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          HighView · SEP AI Coach © 2025
+          HighView · AI Coach © 2025
         </p>
       </div>
     </div>

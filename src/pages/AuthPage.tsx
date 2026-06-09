@@ -49,7 +49,7 @@ export default function AuthPage() {
         {/* Brand */}
         <div className="text-center mb-8">
           <img src="/highview-logo.png" alt="HighView" className="h-10 w-auto mx-auto" />
-          <h1 className="text-2xl font-extrabold text-slate-800 mt-4 tracking-tight">SEP AI Coach</h1>
+          <h1 className="text-2xl font-extrabold text-slate-800 mt-4 tracking-tight">AI Coach</h1>
           <p className="text-slate-500 mt-1 font-medium">Your personal early-career coach</p>
         </div>
 
@@ -154,7 +154,7 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          HighView · SEP AI Coach © 2025
+          HighView · AI Coach © 2025
         </p>
       </div>
     </div>
