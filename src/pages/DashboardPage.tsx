@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import {
   getSessionNotes, getProfile, saveProfile,
   getCheckinStatus, saveCheckin, saveWeeklyCheckinToggle,
-  getScoreHistory,
+  getScoreHistory, changePassword,
   SessionNote, StudentModel, CheckinData, ScoreSnapshot, parseSessionNotes,
 } from '../lib/api'
 import {
   LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail,
   CheckCircle, Flame, Trophy, ChevronDown, ChevronUp, Target,
-  CalendarCheck, X, Star,
+  CalendarCheck, X, Star, KeyRound,
 } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -351,6 +351,32 @@ export default function DashboardPage() {
     navigate('/')
   }
 
+  // Change password
+  const [showChangePw,    setShowChangePw]    = useState(false)
+  const [currentPw,       setCurrentPw]       = useState('')
+  const [newPw,           setNewPw]           = useState('')
+  const [confirmPw,       setConfirmPw]       = useState('')
+  const [pwError,         setPwError]         = useState('')
+  const [pwSaved,         setPwSaved]         = useState(false)
+  const [pwSaving,        setPwSaving]        = useState(false)
+
+  async function handleChangePassword() {
+    setPwError('')
+    if (newPw !== confirmPw) { setPwError('Passwords do not match'); return }
+    if (newPw.length < 6)    { setPwError('Password must be at least 6 characters'); return }
+    setPwSaving(true)
+    try {
+      await changePassword(currentPw, newPw)
+      setPwSaved(true)
+      setCurrentPw(''); setNewPw(''); setConfirmPw('')
+      setTimeout(() => { setPwSaved(false); setShowChangePw(false) }, 2000)
+    } catch (err: any) {
+      setPwError(err.message)
+    } finally {
+      setPwSaving(false)
+    }
+  }
+
   async function handleSaveProfile() {
     setProfileSaving(true)
     try {
@@ -429,8 +455,14 @@ export default function DashboardPage() {
            style={{ boxShadow: '0 2px 16px rgba(28,136,252,0.07)' }}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <img src="/highview-logo.png" alt="HighView" className="h-7 w-auto" />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-sm text-slate-500 hidden sm:block font-medium">Hi, {username}!</span>
+            <button onClick={() => setShowChangePw(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-500
+                hover:text-slate-700 hover:bg-slate-100 transition-all">
+              <KeyRound className="w-4 h-4" />
+              <span className="hidden sm:inline">Change Password</span>
+            </button>
             <button onClick={logout}
               className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-slate-500
                 hover:text-slate-700 hover:bg-slate-100 transition-all">
@@ -438,6 +470,67 @@ export default function DashboardPage() {
               <span className="hidden sm:inline">Log out</span>
             </button>
           </div>
+
+          {/* Change Password Modal */}
+          {showChangePw && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                 style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(8px)' }}>
+              <div className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+                      <KeyRound className="w-5 h-5 text-primary" />
+                    </div>
+                    <h2 className="text-lg font-extrabold text-slate-800">Change Password</h2>
+                  </div>
+                  <button onClick={() => { setShowChangePw(false); setPwError(''); setCurrentPw(''); setNewPw(''); setConfirmPw('') }}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 transition-all">
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    { label: 'Current Password', value: currentPw, setter: setCurrentPw },
+                    { label: 'New Password',     value: newPw,     setter: setNewPw },
+                    { label: 'Confirm Password', value: confirmPw, setter: setConfirmPw },
+                  ].map(({ label, value, setter }) => (
+                    <div key={label} className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>
+                      <input
+                        type="password"
+                        value={value}
+                        onChange={e => setter(e.target.value)}
+                        placeholder={`Enter ${label.toLowerCase()}`}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm
+                          text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+                          focus:ring-primary/30 focus:border-primary/50 transition-all"
+                      />
+                    </div>
+                  ))}
+
+                  {pwError && (
+                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-sm text-red-600 font-medium">
+                      {pwError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={pwSaving || !currentPw || !newPw || !confirmPw}
+                    className={`w-full py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 mt-2
+                      ${pwSaved
+                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                        : 'bg-primary text-white hover:bg-primary/90 shadow-sm shadow-primary/30 disabled:opacity-50'
+                      }`}
+                  >
+                    {pwSaved && <CheckCircle className="w-4 h-4" />}
+                    {pwSaved ? 'Password Updated!' : pwSaving ? 'Saving…' : 'Update Password'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 

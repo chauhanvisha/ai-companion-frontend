@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "ui-preview",
+      "name": "preview",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "4321", "/Users/visha/ai-companion-frontend/.claude/previews"],
-      "port": 4321
+      "runtimeArgs": ["serve", ".", "-l", "3099", "--no-clipboard"],
+      "port": 3099
     }
   ]
 }

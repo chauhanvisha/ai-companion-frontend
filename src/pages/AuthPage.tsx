@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { login, register } from '../lib/api'
 
 export default function AuthPage() {
   const [tab, setTab]           = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
@@ -15,8 +16,9 @@ export default function AuthPage() {
     setError('')
     setLoading(true)
     try {
-      const fn   = tab === 'login' ? login : register
-      const data = await fn(username.trim(), password)
+      const data = tab === 'login'
+        ? await login(username.trim(), password)
+        : await register(username.trim(), password, email.trim())
 
       Object.keys(localStorage).forEach(k => {
         if (k.startsWith('chat_history_')) {
@@ -35,6 +37,10 @@ export default function AuthPage() {
       setLoading(false)
     }
   }
+
+  const inputClass = `w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
+    text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
+    focus:ring-primary/30 focus:border-primary/50 transition-all`
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -87,22 +93,45 @@ export default function AuthPage() {
                 placeholder="Enter your username"
                 required
                 autoFocus
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
-                  text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
-                  focus:ring-primary/30 focus:border-primary/50 transition-all"
+                className={inputClass}
               />
             </div>
+
+            {/* Email — only on signup */}
+            {tab === 'signup' && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  required
+                  className={inputClass}
+                />
+                <p className="text-xs text-slate-400">Used for password recovery only</p>
+              </div>
+            )}
+
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Password</label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Password</label>
+                {tab === 'login' && (
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-primary font-semibold hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                )}
+              </div>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm
-                  text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2
-                  focus:ring-primary/30 focus:border-primary/50 transition-all"
+                className={inputClass}
               />
             </div>
 

@@ -17,15 +17,48 @@ function handle401(res: Response) {
   }
 }
 
-export async function register(username: string, password: string) {
+export async function register(username: string, password: string, email?: string) {
   const res = await fetch(`${BASE}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, email }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.detail || 'Registration failed')
   return data as { token: string; username: string }
+}
+
+export async function changePassword(currentPassword: string, newPassword: string) {
+  const res = await fetch(`${BASE}/api/auth/change-password`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.detail || 'Failed to change password')
+  return data
+}
+
+export async function forgotPassword(email: string) {
+  const res = await fetch(`${BASE}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.detail || 'Failed to send reset email')
+  return data
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const res = await fetch(`${BASE}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.detail || 'Failed to reset password')
+  return data
 }
 
 export async function login(username: string, password: string) {

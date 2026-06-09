@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scenario Cards</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0f2f7;
+    padding: 40px 32px;
+    color: #1e293b;
+  }
+  h1 { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .sub { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 960px; margin: 0 auto; }
+  .card {
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.09);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(0,0,0,0.14); }
+  .art { height: 220px; display: flex; align-items: center; justify-content: center; }
+  .info { padding: 16px 20px 20px; }
+  .title { font-size: 16px; font-weight: 800; color: #0f172a; }
+  .desc { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+</style>
+</head>
+<body>
+
+<h1>Scenario Card Illustrations</h1>
+<p class="sub">Friendly · rounded · Pixar-style 3D characters</p>
+
+<div class="cards">
+
+<!-- ══════════════════════════════════
+     CARD 1 — Interview Prep
+     Confident kid in suit, clipboard
+══════════════════════════════════ -->
+<div class="card">
+<div class="art" style="background: linear-gradient(160deg,#dbeafe 0%,#bfdbfe 100%);">
+<svg width="180" height="210" viewBox="0 0 180 210" fill="none">
+<defs>
+  <!-- skin: warm peach, single gentle radial -->
+  <radialGradient id="s1" cx="38%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#fde9cc"/>
+    <stop offset="70%" stop-color="#f5c48a"/>
+    <stop offset="100%" stop-color="#e8a55a"/>
+  </radialGradient>
+  <!-- hair brown -->
+  <radialGradient id="h1" cx="50%" cy="20%" r="80%">
+    <stop offset="0%" stop-color="#a16207"/>
+    <stop offset="60%" stop-color="#6b3f07"/>
+    <stop offset="100%" stop-color="#431e04"/>
+  </radialGradient>
+  <!-- jacket navy -->
+  <linearGradient id="j1" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1e3a5f"/>
+    <stop offset="100%" stop-color="#0c1e38"/>
+  </linearGradient>
+  <!-- eye iris brown -->
+  <radialGradient id="e1" cx="35%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#c2742a"/>
+    <stop offset="55%" stop-color="#7c3d0a"/>
+    <stop offset="100%" stop-color="#3d1e04"/>
+  </radialGradient>
+</defs>
+
+<!-- ground shadow -->
+<ellipse cx="90" cy="204" rx="58" ry="8" fill="#0f172a" opacity="0.10"/>
+
+<!-- BODY — navy jacket -->
+<path d="M38 168 Q38 144 90 144 Q142 144 142 168 L145 200 L35 200Z" fill="url(#j1)"/>
+<!-- shirt collar + tie -->
+<path d="M78 144 L90 156 L102 144 L97 142 L90 150 L83 142Z" fill="white" opacity="0.92"/>
+<polygon points="90,150 94,162 90,172 86,162" fill="#ef4444"/>
+<!-- jacket lapels -->
+<path d="M78 144 Q72 154 70 166 L82 162Z" fill="#162d4a"/>
+<path d="M102 144 Q108 154 110 166 L98 162Z" fill="#162d4a"/>
+
+<!-- NECK -->
+<rect x="80" y="130" width="20" height="18" rx="8" fill="url(#s1)"/>
+
+<!-- HEAD — big round, Pixar proportions -->
+<ellipse cx="90" cy="90" rx="52" ry="56" fill="url(#s1)"/>
+<!-- soft face highlight -->
+<ellipse cx="76" cy="68" rx="18" ry="14" fill="white" opacity="0.13"/>
+<!-- ear left -->
+<ellipse cx="40" cy="96" rx="8" ry="10" fill="url(#s1)"/>
+<ellipse cx="41" cy="96" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+<!-- ear right -->
+<ellipse cx="140" cy="96" rx="8" ry="10" fill="url(#s1)"/>
+<ellipse cx="139" cy="96" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+
+<!-- HAIR -->
+<path d="M40 88 Q38 44 90 40 Q142 44 140 88 Q136 60 90 58 Q44 60 40 88Z" fill="url(#h1)"/>
+<ellipse cx="90" cy="46" rx="48" ry="20" fill="url(#h1)"/>
+<!-- hair side tufts -->
+<path d="M40 88 Q34 76 36 60 Q40 50 50 52 Q44 66 40 88Z" fill="#431e04"/>
+<path d="M140 88 Q146 76 144 60 Q140 50 130 52 Q136 66 140 88Z" fill="#431e04"/>
+<!-- hair shine -->
+<ellipse cx="78" cy="50" rx="16" ry="7" fill="#c88a30" opacity="0.35"/>
+
+<!-- ── EYE LEFT ── -->
+<!-- white -->
+<ellipse cx="72" cy="94" rx="16" ry="14" fill="white"/>
+<!-- top eyelid shadow -->
+<path d="M57 91 Q72 84 88 91" fill="#e8d5b0" opacity="0.4"/>
+<!-- iris -->
+<circle cx="72" cy="95" r="9" fill="url(#e1)"/>
+<!-- pupil -->
+<circle cx="72" cy="95" r="5" fill="#1a0a00"/>
+<!-- main shine -->
+<ellipse cx="67" cy="90" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<!-- small secondary shine -->
+<circle cx="76" cy="99" r="1.8" fill="white" opacity="0.55"/>
+<!-- top lash line -->
+<path d="M57 91 Q72 83 88 92" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<!-- eyebrow -->
+<path d="M57 79 Q72 73 87 78" stroke="#5c2d0a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- ── EYE RIGHT ── -->
+<ellipse cx="108" cy="94" rx="16" ry="14" fill="white"/>
+<path d="M93 91 Q108 84 124 91" fill="#e8d5b0" opacity="0.4"/>
+<circle cx="108" cy="95" r="9" fill="url(#e1)"/>
+<circle cx="108" cy="95" r="5" fill="#1a0a00"/>
+<ellipse cx="103" cy="90" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<circle cx="112" cy="99" r="1.8" fill="white" opacity="0.55"/>
+<path d="M93 91 Q108 83 124 92" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M93 79 Q108 73 123 78" stroke="#5c2d0a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- NOSE — simple, soft -->
+<ellipse cx="84" cy="110" rx="5" ry="3.5" fill="#d4944a" opacity="0.35"/>
+<ellipse cx="96" cy="110" rx="5" ry="3.5" fill="#d4944a" opacity="0.35"/>
+<path d="M84 114 Q90 118 96 114" stroke="#b87730" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+<!-- SMILE — big friendly -->
+<path d="M68 122 Q90 140 112 122" stroke="#7c3d0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<!-- teeth fill -->
+<path d="M70 122 Q90 138 110 122 Q110 130 90 132 Q70 130 70 122Z" fill="white"/>
+
+<!-- CHEEKS blush -->
+<ellipse cx="52" cy="110" rx="13" ry="9" fill="#fca5a5" opacity="0.28"/>
+<ellipse cx="128" cy="110" rx="13" ry="9" fill="#fca5a5" opacity="0.28"/>
+
+<!-- LEFT ARM + clipboard -->
+<path d="M40 158 Q24 150 18 164 Q12 178 26 186 Q38 190 42 178 Q44 165 48 155Z" fill="url(#s1)"/>
+<!-- clipboard -->
+<rect x="6" y="155" width="30" height="40" rx="4" fill="white" stroke="#cbd5e1" stroke-width="1.5"/>
+<rect x="14" y="151" width="14" height="8" rx="3" fill="#94a3b8"/>
+<rect x="10" y="168" width="20" height="2.5" rx="1.25" fill="#bfdbfe"/>
+<rect x="10" y="174" width="16" height="2" rx="1" fill="#dbeafe"/>
+<rect x="10" y="179" width="18" height="2" rx="1" fill="#dbeafe"/>
+<rect x="10" y="184" width="12" height="2" rx="1" fill="#dbeafe"/>
+<!-- check -->
+<path d="M22 169 L24 172 L29 166" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+
+<!-- RIGHT ARM raised + pointing finger -->
+<path d="M140 158 Q156 146 168 156 Q176 166 170 178 Q162 184 154 178 Q146 168 141 158Z" fill="url(#s1)"/>
+<!-- index finger pointing up -->
+<ellipse cx="170" cy="142" rx="7" ry="16" fill="url(#s1)" transform="rotate(-18,170,142)"/>
+<ellipse cx="172" cy="129" rx="7" ry="8" fill="url(#s1)"/>
+<!-- knuckle lines -->
+<path d="M164 160 Q168 157 172 160" stroke="#d4944a" stroke-width="1" fill="none" opacity="0.5"/>
+
+<!-- speech bubble -->
+<rect x="100" y="20" width="72" height="28" rx="10" fill="white" opacity="0.95"/>
+<polygon points="110,48 104,58 120,48" fill="white" opacity="0.95"/>
+<text x="136" y="33" font-size="8.5" font-weight="800" fill="#1d4ed8" text-anchor="middle">Tell me about</text>
+<text x="136" y="44" font-size="8.5" font-weight="700" fill="#1d4ed8" text-anchor="middle">yourself! 💼</text>
+</svg>
+</div>
+<div class="info">
+  <div class="title">Interview Prep</div>
+  <div class="desc">Mock interviews · behavioral Q&A coaching</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     CARD 2 — Email Writing
+     Happy character at desk typing
+══════════════════════════════════ -->
+<div class="card">
+<div class="art" style="background: linear-gradient(160deg,#fff7ed 0%,#fde68a 100%);">
+<svg width="180" height="210" viewBox="0 0 180 210" fill="none">
+<defs>
+  <radialGradient id="s2" cx="38%" cy="28%" r="70%">
+    <stop offset="0%" stop-color="#fde9cc"/>
+    <stop offset="70%" stop-color="#f5c48a"/>
+    <stop offset="100%" stop-color="#e8a55a"/>
+  </radialGradient>
+  <radialGradient id="h2" cx="50%" cy="15%" r="80%">
+    <stop offset="0%" stop-color="#1e293b"/>
+    <stop offset="100%" stop-color="#0f172a"/>
+  </radialGradient>
+  <linearGradient id="shirt2a" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#fb923c"/>
+    <stop offset="100%" stop-color="#c2410c"/>
+  </linearGradient>
+  <radialGradient id="e2" cx="35%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#c2742a"/>
+    <stop offset="55%" stop-color="#7c3d0a"/>
+    <stop offset="100%" stop-color="#3d1e04"/>
+  </radialGradient>
+  <linearGradient id="desk2a" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#fef9c3"/>
+    <stop offset="100%" stop-color="#fde68a"/>
+  </linearGradient>
+</defs>
+
+<ellipse cx="90" cy="204" rx="58" ry="8" fill="#0f172a" opacity="0.09"/>
+
+<!-- desk -->
+<rect x="10" y="158" width="160" height="11" rx="5" fill="url(#desk2a)"/>
+<rect x="24" y="169" width="10" height="32" rx="4" fill="#fbbf24"/>
+<rect x="146" y="169" width="10" height="32" rx="4" fill="#fbbf24"/>
+
+<!-- laptop -->
+<rect x="44" y="126" width="92" height="34" rx="5" fill="#334155"/>
+<rect x="47" y="129" width="86" height="28" rx="3" fill="#0f172a"/>
+<rect x="50" y="132" width="60" height="3" rx="1.5" fill="#fb923c" opacity="0.8"/>
+<rect x="50" y="138" width="40" height="2" rx="1" fill="#475569"/>
+<rect x="50" y="143" width="50" height="2" rx="1" fill="#475569"/>
+<rect x="50" y="148" width="34" height="2" rx="1" fill="#475569"/>
+<rect x="88" y="152" width="2" height="5" rx="1" fill="#fb923c"/>
+<rect x="30" y="160" width="120" height="5" rx="2.5" fill="#475569"/>
+
+<!-- BODY -->
+<path d="M42 162 Q42 140 90 140 Q138 140 138 162 L140 196 L40 196Z" fill="url(#shirt2a)"/>
+<path d="M68 140 Q66 158 63 172" stroke="#fca57c" stroke-width="3" fill="none" opacity="0.35"/>
+<path d="M78 140 L90 152 L102 140 L97 138 L90 146 L83 138Z" fill="white" opacity="0.88"/>
+
+<!-- neck -->
+<rect x="80" y="126" width="20" height="18" rx="8" fill="url(#s2)"/>
+
+<!-- HEAD -->
+<ellipse cx="90" cy="86" rx="52" ry="56" fill="url(#s2)"/>
+<ellipse cx="76" cy="64" rx="18" ry="14" fill="white" opacity="0.13"/>
+<!-- ears -->
+<ellipse cx="40" cy="92" rx="8" ry="10" fill="url(#s2)"/>
+<ellipse cx="41" cy="92" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+<ellipse cx="140" cy="92" rx="8" ry="10" fill="url(#s2)"/>
+<ellipse cx="139" cy="92" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+
+<!-- HAIR dark/black -->
+<ellipse cx="90" cy="42" rx="48" ry="22" fill="url(#h2)"/>
+<path d="M40 84 Q38 42 90 38 Q142 42 140 84 Q136 56 90 54 Q44 56 40 84Z" fill="url(#h2)"/>
+<path d="M40 84 Q34 72 36 56 Q40 46 50 48 Q44 62 40 84Z" fill="#0f172a"/>
+<path d="M140 84 Q146 72 144 56 Q140 46 130 48 Q136 62 140 84Z" fill="#0f172a"/>
+<ellipse cx="78" cy="46" rx="14" ry="6" fill="#334155" opacity="0.4"/>
+<!-- side sweep bang -->
+<path d="M40 66 Q54 50 76 54 Q64 58 56 70Z" fill="#1e293b"/>
+
+<!-- EYE LEFT -->
+<ellipse cx="72" cy="90" rx="16" ry="14" fill="white"/>
+<path d="M57 87 Q72 80 88 87" fill="#e8d5b0" opacity="0.4"/>
+<circle cx="72" cy="91" r="9" fill="url(#e2)"/>
+<circle cx="72" cy="91" r="5" fill="#1a0a00"/>
+<ellipse cx="67" cy="86" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<circle cx="76" cy="95" r="1.8" fill="white" opacity="0.55"/>
+<path d="M57 87 Q72 79 88 88" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M57 75 Q72 69 87 74" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- EYE RIGHT -->
+<ellipse cx="108" cy="90" rx="16" ry="14" fill="white"/>
+<path d="M93 87 Q108 80 124 87" fill="#e8d5b0" opacity="0.4"/>
+<circle cx="108" cy="91" r="9" fill="url(#e2)"/>
+<circle cx="108" cy="91" r="5" fill="#1a0a00"/>
+<ellipse cx="103" cy="86" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<circle cx="112" cy="95" r="1.8" fill="white" opacity="0.55"/>
+<path d="M93 87 Q108 79 124 88" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M93 75 Q108 69 123 74" stroke="#1e293b" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- NOSE -->
+<ellipse cx="84" cy="106" rx="5" ry="3.5" fill="#d4944a" opacity="0.32"/>
+<ellipse cx="96" cy="106" rx="5" ry="3.5" fill="#d4944a" opacity="0.32"/>
+<path d="M84 110 Q90 114 96 110" stroke="#b87730" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+<!-- BIG SMILE  -->
+<path d="M66 118 Q90 138 114 118" stroke="#7c3d0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M68 118 Q90 136 112 118 Q112 128 90 130 Q68 128 68 118Z" fill="white"/>
+
+<!-- CHEEKS -->
+<ellipse cx="52" cy="106" rx="13" ry="9" fill="#fca5a5" opacity="0.28"/>
+<ellipse cx="128" cy="106" rx="13" ry="9" fill="#fca5a5" opacity="0.28"/>
+
+<!-- ARMS -->
+<path d="M44 155 Q28 148 22 161 Q14 175 28 182 Q38 186 42 175 Q44 163 48 154Z" fill="url(#s2)"/>
+<path d="M136 155 Q152 145 164 155 Q174 165 168 176 Q160 183 152 177 Q145 167 138 156Z" fill="url(#s2)"/>
+<!-- right hand wave -->
+<ellipse cx="166" cy="144" rx="7" ry="12" fill="url(#s2)" transform="rotate(-25,166,144)"/>
+<ellipse cx="172" cy="140" rx="6" ry="11" fill="url(#s2)" transform="rotate(-10,172,140)"/>
+<ellipse cx="160" cy="141" rx="6" ry="11" fill="url(#s2)" transform="rotate(-38,160,141)"/>
+
+<!-- FLYING ENVELOPES -->
+<!-- big one left -->
+<g transform="rotate(-10,22,58)">
+  <rect x="6" y="44" width="42" height="30" rx="6" fill="white" stroke="#fbbf24" stroke-width="1.8"/>
+  <path d="M6 50 L27 62 L48 50" stroke="#f97316" stroke-width="1.5" fill="none"/>
+  <rect x="12" y="62" width="22" height="2" rx="1" fill="#fed7aa"/>
+  <rect x="12" y="67" width="16" height="2" rx="1" fill="#fed7aa"/>
+  <text x="27" y="58" font-size="7" fill="#ea580c" font-weight="800" text-anchor="middle">SEND →</text>
+</g>
+<!-- small top right -->
+<g transform="rotate(10,150,28)" opacity="0.85">
+  <rect x="138" y="18" width="30" height="22" rx="4" fill="white" stroke="#fbbf24" stroke-width="1.5"/>
+  <path d="M138 24 L153 32 L168 24" stroke="#f97316" stroke-width="1.2" fill="none"/>
+</g>
+<!-- tiny top -->
+<g transform="rotate(-5,88,16)" opacity="0.7">
+  <rect x="74" y="10" width="22" height="16" rx="3" fill="white" stroke="#fbbf24" stroke-width="1.2"/>
+  <path d="M74 14 L85 20 L96 14" stroke="#f97316" stroke-width="1" fill="none"/>
+</g>
+
+<!-- sparkles -->
+<text x="148" y="68" font-size="14">✨</text>
+<text x="8"   y="36" font-size="13">⭐</text>
+</svg>
+</div>
+<div class="info">
+  <div class="title">Email Writing</div>
+  <div class="desc">Professional outreach · follow-ups · cold emails</div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════
+     CARD 3 — Inbox Reset
+     Excited character, phone, checkmark
+══════════════════════════════════ -->
+<div class="card">
+<div class="art" style="background: linear-gradient(160deg,#ecfdf5 0%,#a7f3d0 100%);">
+<svg width="180" height="210" viewBox="0 0 180 210" fill="none">
+<defs>
+  <radialGradient id="s3" cx="38%" cy="28%" r="70%">
+    <stop offset="0%" stop-color="#fde9cc"/>
+    <stop offset="70%" stop-color="#f5c48a"/>
+    <stop offset="100%" stop-color="#e8a55a"/>
+  </radialGradient>
+  <radialGradient id="h3" cx="50%" cy="20%" r="80%">
+    <stop offset="0%" stop-color="#b45309"/>
+    <stop offset="60%" stop-color="#7c3d0a"/>
+    <stop offset="100%" stop-color="#431e04"/>
+  </radialGradient>
+  <linearGradient id="shirt3a" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#10b981"/>
+    <stop offset="100%" stop-color="#047857"/>
+  </linearGradient>
+  <radialGradient id="e3" cx="35%" cy="30%" r="70%">
+    <stop offset="0%" stop-color="#c2742a"/>
+    <stop offset="55%" stop-color="#7c3d0a"/>
+    <stop offset="100%" stop-color="#3d1e04"/>
+  </radialGradient>
+  <linearGradient id="phoneG" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1e293b"/>
+    <stop offset="100%" stop-color="#0f172a"/>
+  </linearGradient>
+</defs>
+
+<ellipse cx="90" cy="204" rx="58" ry="8" fill="#0f172a" opacity="0.09"/>
+
+<!-- BODY -->
+<path d="M40 168 Q40 144 90 144 Q140 144 140 168 L142 198 L38 198Z" fill="url(#shirt3a)"/>
+<path d="M66 144 Q64 162 62 178" stroke="#6ee7b7" stroke-width="3" fill="none" opacity="0.35"/>
+<path d="M78 144 L90 156 L102 144 L97 142 L90 150 L83 142Z" fill="white" opacity="0.88"/>
+
+<!-- neck -->
+<rect x="80" y="130" width="20" height="18" rx="8" fill="url(#s3)"/>
+
+<!-- HEAD -->
+<ellipse cx="90" cy="88" rx="52" ry="56" fill="url(#s3)"/>
+<ellipse cx="76" cy="66" rx="18" ry="14" fill="white" opacity="0.13"/>
+<!-- ears -->
+<ellipse cx="40" cy="94" rx="8" ry="10" fill="url(#s3)"/>
+<ellipse cx="41" cy="94" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+<ellipse cx="140" cy="94" rx="8" ry="10" fill="url(#s3)"/>
+<ellipse cx="139" cy="94" rx="5" ry="7" fill="#e8a55a" opacity="0.5"/>
+
+<!-- HAIR warm brown / auburn -->
+<ellipse cx="90" cy="44" rx="48" ry="22" fill="url(#h3)"/>
+<path d="M40 86 Q38 44 90 40 Q142 44 140 86 Q136 58 90 56 Q44 58 40 86Z" fill="url(#h3)"/>
+<path d="M40 86 Q34 74 36 58 Q40 48 50 50 Q44 64 40 86Z" fill="#431e04"/>
+<path d="M140 86 Q146 74 144 58 Q140 48 130 50 Q136 64 140 86Z" fill="#431e04"/>
+<ellipse cx="78" cy="48" rx="16" ry="7" fill="#d97706" opacity="0.3"/>
+
+<!-- EYE LEFT — squinting happy -->
+<ellipse cx="72" cy="92" rx="16" ry="14" fill="white"/>
+<path d="M57 89 Q72 82 88 89" fill="#e8d5b0" opacity="0.4"/>
+<circle cx="72" cy="93" r="9" fill="url(#e3)"/>
+<circle cx="72" cy="93" r="5" fill="#1a0a00"/>
+<ellipse cx="67" cy="88" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<circle cx="76" cy="97" r="1.8" fill="white" opacity="0.55"/>
+<path d="M57 89 Q72 81 88 90" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<!-- happy squint lower lid curve -->
+<path d="M58 100 Q72 106 87 100" stroke="#d4944a" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.5"/>
+<path d="M57 77 Q72 71 87 76" stroke="#5c2d0a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- EYE RIGHT -->
+<ellipse cx="108" cy="92" rx="16" ry="14" fill="white"/>
+<path d="M93 89 Q108 82 124 89" fill="#e8d5b0" opacity="0.4"/>
+<circle cx="108" cy="93" r="9" fill="url(#e3)"/>
+<circle cx="108" cy="93" r="5" fill="#1a0a00"/>
+<ellipse cx="103" cy="88" rx="3.5" ry="4" fill="white" opacity="0.95"/>
+<circle cx="112" cy="97" r="1.8" fill="white" opacity="0.55"/>
+<path d="M93 89 Q108 81 124 90" stroke="#2d1200" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M93 100 Q108 106 123 100" stroke="#d4944a" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.5"/>
+<path d="M93 77 Q108 71 123 76" stroke="#5c2d0a" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+<!-- NOSE -->
+<ellipse cx="84" cy="108" rx="5" ry="3.5" fill="#d4944a" opacity="0.32"/>
+<ellipse cx="96" cy="108" rx="5" ry="3.5" fill="#d4944a" opacity="0.32"/>
+<path d="M84 112 Q90 116 96 112" stroke="#b87730" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+<!-- HUGE excited smile -->
+<path d="M64 122 Q90 146 116 122" stroke="#7c3d0a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M66 122 Q90 144 114 122 Q114 134 90 136 Q66 134 66 122Z" fill="white"/>
+
+<!-- CHEEKS extra rosy (excited) -->
+<ellipse cx="50" cy="110" rx="14" ry="10" fill="#fb7185" opacity="0.30"/>
+<ellipse cx="130" cy="110" rx="14" ry="10" fill="#fb7185" opacity="0.30"/>
+
+<!-- ARMS -->
+<!-- left: holding phone -->
+<path d="M42 160 Q26 150 18 163 Q10 178 24 185 Q36 190 40 178 Q42 166 46 156Z" fill="url(#s3)"/>
+<!-- right: raised thumbs up -->
+<path d="M138 160 Q155 148 168 158 Q178 170 172 181 Q162 188 154 182 Q146 170 140 160Z" fill="url(#s3)"/>
+<!-- thumb up -->
+<ellipse cx="172" cy="146" rx="8" ry="15" fill="url(#s3)" transform="rotate(-12,172,146)"/>
+<ellipse cx="174" cy="133" rx="8" ry="9" fill="url(#s3)"/>
+
+<!-- PHONE in left hand -->
+<rect x="10" y="154" width="26" height="44" rx="6" fill="url(#phoneG)"/>
+<rect x="13" y="160" width="20" height="32" rx="3" fill="#ecfdf5"/>
+<!-- screen header -->
+<rect x="13" y="160" width="20" height="8" rx="0" fill="#059669"/>
+<text x="23" y="167" font-size="5" font-weight="800" fill="white" text-anchor="middle">INBOX</text>
+<!-- email rows with checks -->
+<rect x="14" y="170" width="18" height="5" rx="2" fill="#d1fae5"/>
+<circle cx="18" cy="172.5" r="2" fill="#22c55e"/>
+<path d="M17 172.5 L18 174 L20 171" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+<rect x="14" y="177" width="18" height="5" rx="2" fill="#d1fae5"/>
+<circle cx="18" cy="179.5" r="2" fill="#22c55e"/>
+<path d="M17 179.5 L18 181 L20 178" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+<rect x="14" y="184" width="18" height="5" rx="2" fill="#d1fae5"/>
+<circle cx="18" cy="186.5" r="2" fill="#22c55e"/>
+<path d="M17 186.5 L18 188 L20 185" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+<!-- home bar -->
+<rect x="19" y="192" width="8" height="2" rx="1" fill="#334155"/>
+
+<!-- BIG CHECKMARK badge floating -->
+<circle cx="148" cy="42" r="24" fill="#22c55e" opacity="0.95"/>
+<circle cx="148" cy="42" r="20" fill="#16a34a"/>
+<path d="M137 42 L144 50 L160 34" stroke="white" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="148" cy="42" r="24" fill="none" stroke="white" stroke-width="3" opacity="0.35"/>
+
+<!-- INBOX ZERO label -->
+<rect x="116" y="70" width="64" height="18" rx="9" fill="#065f46"/>
+<text x="148" y="82" font-size="8" font-weight="800" fill="#6ee7b7" text-anchor="middle">INBOX ZERO! 🎉</text>
+
+<!-- confetti -->
+<circle cx="20" cy="42" r="4" fill="#f97316" opacity="0.8"/>
+<circle cx="34" cy="26" r="3" fill="#8b5cf6" opacity="0.75"/>
+<circle cx="166" cy="98" r="4" fill="#f43f5e" opacity="0.7"/>
+<circle cx="158" cy="110" r="3" fill="#fbbf24" opacity="0.8"/>
+<rect x="10" y="76" width="6" height="6" rx="1" fill="#22c55e" opacity="0.7" transform="rotate(25,13,79)"/>
+<rect x="168" y="124" width="5" height="5" rx="1" fill="#3b82f6" opacity="0.7" transform="rotate(40,170,127)"/>
+<circle cx="6" cy="118" r="3" fill="#fbbf24" opacity="0.65"/>
+</svg>
+</div>
+<div class="info">
+  <div class="title">Inbox Reset</div>
+  <div class="desc">Triage · prioritise · draft smart replies</div>
+</div>
+</div>
+
+</div>
+
+<p style="text-align:center;font-size:12px;color:#94a3b8;margin-top:32px;">
+  All inline SVG — zero dependencies · scales perfectly · ready to paste into React
+</p>
+</body>
+</html>
