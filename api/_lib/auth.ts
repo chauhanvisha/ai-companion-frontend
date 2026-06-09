@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose'
 
-const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'change-me')
+const jwtSecretRaw = process.env.JWT_SECRET || 'highview-dev-secret-change-in-production'
+const secret = new TextEncoder().encode(jwtSecretRaw)
 
 export async function createToken(username: string): Promise<string> {
   return new SignJWT({ sub: username })

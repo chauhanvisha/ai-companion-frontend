@@ -6,6 +6,12 @@
     "api/chat/stream.ts": {
       "memory": 1024,
       "maxDuration": 300
+    },
+    "api/chat/summarize.ts": {
+      "maxDuration": 60
+    },
+    "api/auth/forgot-password.ts": {
+      "maxDuration": 30
     }
   }
 }

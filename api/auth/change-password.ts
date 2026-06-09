@@ -14,15 +14,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!currentPassword || !newPassword) return res.status(400).json({ detail: 'Both current and new password required' })
   if (newPassword.length < 6) return res.status(400).json({ detail: 'New password must be at least 6 characters' })
 
-  const client = db()
-  const result = await client.from('users').select('password_hash').eq('username', username)
-  if (!result.data?.length) return res.status(404).json({ detail: 'User not found' })
+  try {
+    const client = db()
+    const result = await client.from('users').select('password_hash').eq('username', username)
+    if (!result.data?.length) return res.status(404).json({ detail: 'User not found' })
 
-  const currentHash = createHash('sha256').update(currentPassword).digest('hex')
-  if (result.data[0].password_hash !== currentHash) return res.status(401).json({ detail: 'Current password is incorrect' })
+    const currentHash = createHash('sha256').update(currentPassword).digest('hex')
+    if (result.data[0].password_hash !== currentHash) return res.status(401).json({ detail: 'Current password is incorrect' })
 
-  const newHash = createHash('sha256').update(newPassword).digest('hex')
-  await client.from('users').update({ password_hash: newHash }).eq('username', username)
+    const newHash = createHash('sha256').update(newPassword).digest('hex')
+    const { error: updateError } = await client.from('users').update({ password_hash: newHash }).eq('username', username)
+    if (updateError) {
+      console.error('[change-password] update error:', updateError.message)
+      return res.status(500).json({ detail: 'Failed to update password. Please try again.' })
+    }
 
-  return res.json({ ok: true })
+    return res.json({ ok: true })
+  } catch (e: any) {
+    console.error('[change-password] error:', e.message)
+    return res.status(500).json({ detail: 'Something went wrong. Please try again.' })
+  }
 }
