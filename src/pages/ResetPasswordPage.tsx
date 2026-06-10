@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">
-          HighView · AI Coach © 2025
+          HighView · AI Coach © {new Date().getFullYear()}
         </p>
       </div>
     </div>
