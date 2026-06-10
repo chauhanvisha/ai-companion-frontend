@@ -845,30 +845,6 @@ export default function DashboardPage() {
 
         </div>{/* end Progress + Profile grid */}
 
-        {/* Recent sessions */}
-        <div>
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            Recent sessions
-          </h2>
-          {notes.length === 0 ? (
-            <div className="panel-card p-10 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-7 h-7 text-primary/40" />
-              </div>
-              <p className="text-slate-400 text-sm font-medium">
-                Complete your first session to start building your coaching history.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {notes.map((note, i) => (
-                <SessionCard key={i} note={note} onClick={() => navigate(`/chat/${note.scenario}`)} />
-              ))}
-            </div>
-          )}
-        </div>
-
       </main>
     </div>
   )
