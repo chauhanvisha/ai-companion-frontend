@@ -681,9 +681,12 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Progress + Profile side by side */}
+        <div className={`grid gap-6 mb-8 items-start ${totalSessions > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+
         {/* Progress panel */}
         {totalSessions > 0 && (
-          <div className="panel-card p-6 mb-8">
+          <div className="panel-card p-6 h-full">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
@@ -731,7 +734,7 @@ export default function DashboardPage() {
         )}
 
         {/* Profile */}
-        <div className="panel-card p-7 mb-12">
+        <div className="panel-card p-7">
           <div className="flex items-center gap-2 mb-1">
             <Pencil className="w-4 h-4 text-primary" />
             <h2 className="text-base font-bold text-slate-800">Your Profile</h2>
@@ -793,6 +796,8 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        </div>{/* end Progress + Profile grid */}
 
         {/* Recent sessions */}
         <div>
