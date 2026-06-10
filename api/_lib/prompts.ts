@@ -49,22 +49,14 @@ export function buildExtractionPrompt(
 ): string {
   const skills = scenario ? SCENARIO_SKILLS[scenario] : null
   const skillBlock = skills
-    ? `"skill_scores": {
-    // Score each skill 0–100 based only on what you OBSERVED in this session.
-    // Only include skills where you have at least 2 clear examples to judge.
-${skills.map(s => `    // "${s.key}": ${s.label}`).join('\n')}
-  },
-  "skill_evidence": {
-    // For EACH skill you scored above, write ONE specific sentence (max 18 words)
-    // explaining WHY — point to the concrete thing the student did this session.
-    // Example: "storytelling": "Used clear STAR structure but rushed the result at the end."
-    // Only include skills that also appear in skill_scores.
+    ? `"skill_assessment": {
+    // For EACH skill: a 0–100 score AND a one-sentence reason, TOGETHER as one object.
+    // Only include skills where you have at least 2 clear examples this session.
+    // The "why" must be concrete and reference what actually happened (max 18 words).
+${skills.map(s => `    // "${s.key}" (${s.label}): { "score": <0-100>, "why": "<concrete reason>" }`).join('\n')}
   }`
-    : `"skill_scores": {
-    // Score any skills clearly demonstrated in this session (0–100)
-  },
-  "skill_evidence": {
-    // One specific sentence per scored skill explaining WHY (max 18 words)
+    : `"skill_assessment": {
+    // For each skill clearly shown: { "score": <0-100>, "why": "<concrete one-line reason>" }
   }`
 
   return `You are analyzing a coaching session to update a student's persistent memory profile.
@@ -93,8 +85,7 @@ STRICT RULES:
 - Only include fields with clear evidence from THIS conversation
 - Be specific: "deflects conflict questions by saying it resolved itself" not "needs work on conflict"
 - For array fields: only add items NOT already in the existing model
-- For skill_scores: only include skills where the conversation gives enough evidence (2+ data points). Scores reflect THIS session's performance — merging handles the running average.
-- For skill_evidence: include one sentence ONLY for skills you scored. Be concrete and reference what actually happened this session — never generic. The student will read this to understand why their score is what it is.
+- For skill_assessment: only include skills where the conversation gives enough evidence (2+ data points). Each entry MUST have both "score" and "why". Never give a score without a reason. Scores reflect THIS session's performance — merging handles the running average. The "why" is shown to the student to explain their score, so be concrete and specific to this session.
 - If the session was short or nothing notable happened, return {}
 - Return raw JSON only — no markdown, no explanation, no code blocks`
 }
@@ -126,35 +117,45 @@ export function mergeStudentModel(existing: StudentModel, extracted: Partial<Stu
 
   const today = new Date().toISOString().slice(0, 10)
 
-  // Skill scores: exponential moving average (65% existing, 35% new)
-  if (extracted.skill_scores && typeof extracted.skill_scores === 'object') {
+  // Build a normalised list of [skill, score, why?] from whichever format the LLM returned.
+  // Preferred new format: skill_assessment = { skill: { score, why } }
+  // Backward-compatible:  skill_scores = { skill: number } (+ optional skill_evidence map)
+  const scorePairs: { skill: string; score: number; why?: string }[] = []
+  const assessment = (extracted as any).skill_assessment as Record<string, { score?: number; why?: string }> | undefined
+
+  if (assessment && typeof assessment === 'object') {
+    for (const [skill, obj] of Object.entries(assessment)) {
+      if (obj && typeof obj.score === 'number') scorePairs.push({ skill, score: obj.score, why: obj.why })
+    }
+  } else if (extracted.skill_scores && typeof extracted.skill_scores === 'object') {
+    const ev = (extracted as any).skill_evidence as Record<string, string> | undefined
+    for (const [skill, sc] of Object.entries(extracted.skill_scores)) {
+      if (typeof sc === 'number') scorePairs.push({ skill, score: sc, why: ev?.[skill] })
+    }
+  }
+
+  if (scorePairs.length > 0) {
     const existingScores = existing.skill_scores || {}
     const updatedScores: Record<string, number> = { ...existingScores }
-    for (const [skill, newScore] of Object.entries(extracted.skill_scores)) {
-      if (typeof newScore === 'number' && newScore >= 0 && newScore <= 100) {
-        const prev = existingScores[skill]
-        updatedScores[skill] = prev !== undefined
-          ? Math.round(prev * 0.65 + newScore * 0.35)
-          : Math.round(newScore)
-      }
-    }
-    if (Object.keys(updatedScores).length > 0) merged.skill_scores = updatedScores
+    const mergedEvidence: Record<string, SkillEvidence[]> = { ...(existing.skill_evidence || {}) }
 
-    // Skill evidence: APPEND new evidence (never overwrite), keep last 6 per skill.
-    // The LLM returns a one-line string per skill; we stamp date + current score.
-    const rawEvidence = (extracted as any).skill_evidence as Record<string, string> | undefined
-    if (rawEvidence && typeof rawEvidence === 'object') {
-      const mergedEvidence: Record<string, SkillEvidence[]> = { ...(existing.skill_evidence || {}) }
-      for (const [skill, note] of Object.entries(rawEvidence)) {
-        if (typeof note !== 'string' || !note.trim()) continue
-        // Only attach evidence to skills that actually have a score
-        const score = merged.skill_scores?.[skill]
-        if (score === undefined) continue
+    for (const { skill, score: newScore, why } of scorePairs) {
+      if (newScore < 0 || newScore > 100) continue
+      const prev = existingScores[skill]
+      const finalScore = prev !== undefined
+        ? Math.round(prev * 0.65 + newScore * 0.35)   // exponential moving average
+        : Math.round(newScore)
+      updatedScores[skill] = finalScore
+
+      // Append evidence (never overwrite), keep last 6 per skill, stamp date + running score
+      if (typeof why === 'string' && why.trim()) {
         const prevList = mergedEvidence[skill] || []
-        mergedEvidence[skill] = [...prevList, { date: today, note: note.trim(), score }].slice(-6)
+        mergedEvidence[skill] = [...prevList, { date: today, note: why.trim(), score: finalScore }].slice(-6)
       }
-      if (Object.keys(mergedEvidence).length > 0) merged.skill_evidence = mergedEvidence
     }
+
+    if (Object.keys(updatedScores).length > 0)   merged.skill_scores   = updatedScores
+    if (Object.keys(mergedEvidence).length > 0)  merged.skill_evidence = mergedEvidence
   }
 
   merged.sessions_total = (existing.sessions_total || 0) + 1
