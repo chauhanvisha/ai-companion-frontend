@@ -238,14 +238,21 @@ export function buildSystemPrompt(opts: {
       if (m.trajectory)               block += `- Progress arc: ${m.trajectory}\n`
       if (m.sessions_total)           block += `- Sessions completed: ${m.sessions_total}\n`
 
-      // Skill scores — highlight the lowest as the focus area
+      // Skill scores — ONLY for the current scenario (no cross-scenario bleed).
+      // An interview-prep weakness must never be cited inside an inbox-reset session.
       if (m.skill_scores && Object.keys(m.skill_scores).length > 0) {
-        const scores = m.skill_scores
-        const entries = Object.entries(scores).sort(([, a], [, b]) => a - b)
-        block += `- Skill scores: ${entries.map(([k, v]) => `${k} ${v}/100`).join(', ')}\n`
-        const lowestSkill = entries[0]
-        if (lowestSkill && lowestSkill[1] < 70) {
-          block += `- PRIORITY: "${lowestSkill[0]}" is at ${lowestSkill[1]}/100 — actively target this in your coaching today.\n`
+        const currentSkillKeys = opts.scenario ? (SCENARIO_SKILLS[opts.scenario] || []).map(s => s.key) : null
+        let entries = Object.entries(m.skill_scores)
+        if (currentSkillKeys && currentSkillKeys.length) {
+          entries = entries.filter(([k]) => currentSkillKeys.includes(k))
+        }
+        entries.sort(([, a], [, b]) => a - b)
+        if (entries.length > 0) {
+          block += `- Skill scores (this scenario): ${entries.map(([k, v]) => `${k} ${v}/100`).join(', ')}\n`
+          const lowestSkill = entries[0]
+          if (lowestSkill && lowestSkill[1] < 70) {
+            block += `- PRIORITY: "${lowestSkill[0]}" is at ${lowestSkill[1]}/100 — actively target this in your coaching today.\n`
+          }
         }
       }
 

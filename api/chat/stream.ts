@@ -3,7 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import { db } from '../_lib/db'
 import { getUserFromRequest } from '../_lib/auth'
-import { buildSystemPrompt, SCENARIO_NAMES, RelevantMoment } from '../_lib/prompts'
+import { buildSystemPrompt, SCENARIO_NAMES, SCENARIO_SKILLS, RelevantMoment } from '../_lib/prompts'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ detail: 'Method not allowed' })
@@ -25,11 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const profile      = profileRow ? { field: profileRow.field, target_role: profileRow.target_role, school: profileRow.school } : null
   const studentModel = profileRow?.student_model || null
 
-  // Smart context selection: prioritise same-scenario notes, then most recent, cap at 3
+  // Scenario isolation: only inject notes from the SAME scenario.
+  // (An interview-prep recap should never bleed into an inbox-reset session.)
   const allNotes     = notesRes.data || []
-  const sameScenario = allNotes.filter(n => n.scenario === scenario)
-  const otherNotes   = allNotes.filter(n => n.scenario !== scenario)
-  const sessionNotes = [...sameScenario, ...otherNotes].slice(0, 3)
+  const sessionNotes = allNotes.filter(n => n.scenario === scenario).slice(0, 3)
 
   // Check-in: only inject if enabled and done within last 7 days
   const checkinEnabled = profileRow?.weekly_checkin_enabled === true
@@ -45,9 +44,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-      // Build a query that captures the focus of today's session
-      const lowestSkill = studentModel?.skill_scores
-        ? Object.entries(studentModel.skill_scores).sort(([, a], [, b]) => a - b)[0]?.[0]
+      // Build a query that captures the focus of today's session.
+      // Only consider skills that belong to the CURRENT scenario (no cross-scenario bleed).
+      const currentSkillKeys = (SCENARIO_SKILLS[scenario] || []).map(s => s.key)
+      const scopedScores = studentModel?.skill_scores
+        ? Object.entries(studentModel.skill_scores).filter(([k]) => currentSkillKeys.includes(k))
+        : []
+      const lowestSkill = scopedScores.length
+        ? scopedScores.sort(([, a], [, b]) => a - b)[0]?.[0]
         : null
       const queryParts = [
         SCENARIO_NAMES[scenario] || scenario,
@@ -69,7 +73,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         match_count:     3,
         filter_username: username,
       })
-      relevantMoments = (moments || []) as RelevantMoment[]
+      // Only keep moments from the same scenario — no cross-scenario bleed
+      relevantMoments = ((moments || []) as RelevantMoment[]).filter(m => m.scenario === scenario)
     } catch { /* fail silently — semantic memory is non-critical */ }
   }
 
