@@ -3,12 +3,38 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   streamChat, summarizeSession, saveProfile, getProfile, Message,
   getChatSessions, createChatSession, getChatSessionMessages,
-  updateChatSession, deleteChatSession, ChatSession,
+  updateChatSession, deleteChatSession, ChatSession, SkillEvidence,
 } from '../lib/api'
 import {
   ArrowLeft, Send, Pencil, User, CheckCircle, Star, Zap,
-  TrendingUp, ArrowRight, Download, Plus, Trash2,
+  TrendingUp, ArrowRight, Download, Plus, Trash2, ChevronDown, ChevronUp, Target,
 } from 'lucide-react'
+
+// Skill keys + labels per scenario (mirrors backend SCENARIO_SKILLS)
+const SCENARIO_SKILL_DEFS: Record<string, { key: string; label: string }[]> = {
+  interview: [
+    { key: 'storytelling', label: 'Storytelling' },
+    { key: 'confidence',   label: 'Confidence' },
+    { key: 'specificity',  label: 'Specificity' },
+    { key: 'conciseness',  label: 'Conciseness' },
+  ],
+  email: [
+    { key: 'clarity',         label: 'Clarity' },
+    { key: 'professionalism', label: 'Professionalism' },
+    { key: 'structure',       label: 'Structure' },
+    { key: 'directness',      label: 'Directness' },
+  ],
+  inbox: [
+    { key: 'prioritization', label: 'Prioritization' },
+    { key: 'decisiveness',   label: 'Decisiveness' },
+  ],
+}
+
+function skillColor(v: number): string {
+  if (v >= 70) return '#10b981'
+  if (v >= 45) return '#f59e0b'
+  return '#ef4444'
+}
 
 const SCENARIOS: Record<string, { emoji: string; title: string; color: string }> = {
   interview: { emoji: '🎯', title: 'Interview Prep',  color: '#1C88FC' },
@@ -53,13 +79,19 @@ export default function ChatPage() {
   const [profileSaved,      setProfileSaved]      = useState(false)
   const [profileSaving,     setProfileSaving]     = useState(false)
 
-  // ── Load profile ─────────────────────────────────────────────────────────────
+  // ── Skills panel (scores + evidence for THIS scenario) ───────────────────────
+  const [skillScores,   setSkillScores]   = useState<Record<string, number>>({})
+  const [skillEvidence, setSkillEvidence] = useState<Record<string, SkillEvidence[]>>({})
+
+  // ── Load profile + skills ──────────────────────────────────────────────────────
   useEffect(() => {
     getProfile().then((p) => {
       if (p) {
         setProfileField(p.field || '')
         setProfileTargetRole(p.target_role || '')
         setProfileSchool(p.school || '')
+        setSkillScores(p.student_model?.skill_scores || {})
+        setSkillEvidence(p.student_model?.skill_evidence || {})
       }
     }).catch(() => {})
   }, [])
@@ -675,7 +707,72 @@ export default function ChatPage() {
             </p>
           </div>
         </div>
+
+        {/* ── RIGHT PANEL: scores + reasons for THIS scenario ──────────────────── */}
+        {(() => {
+          const defs = SCENARIO_SKILL_DEFS[scenario] || []
+          const scored = defs.filter(d => skillScores[d.key] !== undefined)
+          if (scored.length === 0) return null
+          return (
+            <aside className="hidden xl:flex flex-col w-72 shrink-0 overflow-y-auto px-4 py-5 gap-3"
+                   style={{ background: 'white', borderLeft: '1px solid rgba(28,136,252,0.08)' }}>
+              <div className="flex items-center gap-2 pb-2">
+                <Target className="w-4 h-4" style={{ color: meta.color }} />
+                <h2 className="text-sm font-bold text-slate-800">Your {meta.title} Skills</h2>
+              </div>
+              <p className="text-xs text-slate-400 -mt-1 mb-1">Tap a skill to see why you're at that score.</p>
+              {scored.map(d => (
+                <ChatSkillRow
+                  key={d.key}
+                  label={d.label}
+                  value={skillScores[d.key]}
+                  evidence={skillEvidence[d.key] || []}
+                />
+              ))}
+            </aside>
+          )
+        })()}
       </div>
+    </div>
+  )
+}
+
+// ── Right-panel skill row: bar + score + expandable "why" ─────────────────────
+function ChatSkillRow({ label, value, evidence }: {
+  label: string; value: number; evidence: SkillEvidence[]
+}) {
+  const [open, setOpen] = useState(false)
+  const color = skillColor(value)
+  const hasEvidence = evidence.length > 0
+  return (
+    <div className="rounded-xl border border-slate-100 p-3">
+      <div
+        className={`flex items-center justify-between gap-2 ${hasEvidence ? 'cursor-pointer' : ''}`}
+        onClick={() => hasEvidence && setOpen(o => !o)}
+      >
+        <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+          {hasEvidence && (open
+            ? <ChevronUp className="w-3 h-3 text-slate-400" />
+            : <ChevronDown className="w-3 h-3 text-slate-300" />)}
+          {label}
+        </span>
+        <span className="text-xs font-bold" style={{ color }}>{value}</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
+      </div>
+      {open && hasEvidence && (
+        <div className="mt-2.5 pl-2 border-l-2 space-y-2" style={{ borderColor: `${color}40` }}>
+          {[...evidence].reverse().map((ev, i) => (
+            <div key={i}>
+              <p className="text-xs text-slate-600 leading-relaxed">{ev.note}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · scored {ev.score}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
