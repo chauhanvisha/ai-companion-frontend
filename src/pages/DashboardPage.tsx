@@ -4,7 +4,7 @@ import {
   getSessionNotes, getProfile, saveProfile,
   getCheckinStatus, saveCheckin, saveWeeklyCheckinToggle,
   getScoreHistory, changePassword,
-  SessionNote, StudentModel, CheckinData, ScoreSnapshot, parseSessionNotes,
+  SessionNote, StudentModel, CheckinData, ScoreSnapshot, SkillEvidence, parseSessionNotes,
 } from '../lib/api'
 import {
   LogOut, ArrowRight, Clock, Pencil, Mic, Inbox, Mail,
@@ -128,28 +128,68 @@ function SessionCard({ note, onClick }: { note: SessionNote; onClick: () => void
   )
 }
 
-function SkillBar({ label, value, history }: { label: string; value: number; history?: number[] }) {
+function SkillBar({ label, value, history, evidence }: {
+  label: string; value: number; history?: number[]; evidence?: SkillEvidence[]
+}) {
+  const [open, setOpen] = useState(false)
   const color = scoreColor(value)
   const first = history && history.length > 1 ? history[0] : null
   const delta = first !== null ? value - first : 0
+  const hasEvidence = !!(evidence && evidence.length > 0)
+
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs text-slate-500 w-24 flex-shrink-0 truncate">{label}</span>
-      <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
+    <div>
+      <div
+        className={`flex items-center gap-3 ${hasEvidence ? 'cursor-pointer group' : ''}`}
+        onClick={() => hasEvidence && setOpen(o => !o)}
+      >
+        <span className="text-xs text-slate-500 w-24 flex-shrink-0 truncate flex items-center gap-1">
+          {hasEvidence && (
+            open
+              ? <ChevronUp className="w-3 h-3 text-slate-400 flex-shrink-0" />
+              : <ChevronDown className="w-3 h-3 text-slate-300 group-hover:text-slate-400 flex-shrink-0" />
+          )}
+          {label}
+        </span>
+        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${value}%`, background: color }} />
+        </div>
+        {history && history.length > 1
+          ? <Sparkline data={history} color={color} />
+          : <span className="w-16" />
+        }
+        <div className="flex items-center gap-1 w-14 justify-end flex-shrink-0">
+          <span className="text-xs font-bold" style={{ color }}>{value}</span>
+          {delta !== 0 && (
+            <span className="text-xs font-medium" style={{ color: delta > 0 ? '#10b981' : '#ef4444' }}>
+              {delta > 0 ? `+${delta}` : delta}
+            </span>
+          )}
+        </div>
       </div>
-      {history && history.length > 1
-        ? <Sparkline data={history} color={color} />
-        : <span className="w-16" />
-      }
-      <div className="flex items-center gap-1 w-14 justify-end flex-shrink-0">
-        <span className="text-xs font-bold" style={{ color }}>{value}</span>
-        {delta !== 0 && (
-          <span className="text-xs font-medium" style={{ color: delta > 0 ? '#10b981' : '#ef4444' }}>
-            {delta > 0 ? `+${delta}` : delta}
-          </span>
-        )}
-      </div>
+
+      {/* Evidence drill-down — why this score is what it is */}
+      {open && hasEvidence && (
+        <div className="mt-2 ml-1 pl-3 border-l-2 space-y-2" style={{ borderColor: `${color}40` }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            Why you're at {value}
+          </p>
+          {[...evidence!].reverse().map((ev, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="text-[10px] font-bold mt-0.5 px-1.5 py-0.5 rounded-md flex-shrink-0"
+                    style={{ background: `${scoreColor(ev.score)}15`, color: scoreColor(ev.score) }}>
+                {ev.score}
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs text-slate-600 leading-relaxed">{ev.note}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {new Date(ev.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -437,12 +477,18 @@ export default function DashboardPage() {
   }
 
   // Skill groups
-  const skillGroups: { scenarioKey: string; title: string; scores: { key: string; label: string; value: number; history: number[] }[] }[] = []
+  const skillGroups: { scenarioKey: string; title: string; scores: { key: string; label: string; value: number; history: number[]; evidence: SkillEvidence[] }[] }[] = []
   if (studentModel?.skill_scores && Object.keys(studentModel.skill_scores).length > 0) {
     for (const { key: scenarioKey, title } of SCENARIOS) {
       const scores = (SCENARIO_SKILL_KEYS[scenarioKey] || [])
         .filter(k => studentModel.skill_scores![k] !== undefined)
-        .map(k => ({ key: k, label: SKILL_LABELS[k] || k, value: studentModel.skill_scores![k], history: skillHistory[k] || [] }))
+        .map(k => ({
+          key: k,
+          label: SKILL_LABELS[k] || k,
+          value: studentModel.skill_scores![k],
+          history: skillHistory[k] || [],
+          evidence: studentModel.skill_evidence?.[k] || [],
+        }))
       if (scores.length > 0) skillGroups.push({ scenarioKey, title, scores })
     }
   }
@@ -659,7 +705,7 @@ export default function DashboardPage() {
                     <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">{title}</span>
                   </div>
                   <div className="space-y-2.5">
-                    {scores.map(s => <SkillBar key={s.key} label={s.label} value={s.value} history={s.history} />)}
+                    {scores.map(s => <SkillBar key={s.key} label={s.label} value={s.value} history={s.history} evidence={s.evidence} />)}
                   </div>
                 </div>
               ))}

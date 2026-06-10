@@ -1,4 +1,10 @@
 // ─── Student model type ──────────────────────────────────────────────────────
+export interface SkillEvidence {
+  date:  string   // YYYY-MM-DD, stamped server-side
+  note:  string   // one-line reason from the session
+  score: number   // the running score at the time this evidence was recorded
+}
+
 export interface StudentModel {
   communication_style?:      string
   confidence_level?:         string
@@ -8,6 +14,7 @@ export interface StudentModel {
   trajectory?:               string
   preferred_feedback_style?: string
   skill_scores?:             Record<string, number>   // e.g. { storytelling: 72, confidence: 58 }
+  skill_evidence?:           Record<string, SkillEvidence[]>  // why each score is what it is
   sessions_total?:           number
   last_updated?:             string
 }
@@ -46,9 +53,18 @@ export function buildExtractionPrompt(
     // Score each skill 0–100 based only on what you OBSERVED in this session.
     // Only include skills where you have at least 2 clear examples to judge.
 ${skills.map(s => `    // "${s.key}": ${s.label}`).join('\n')}
+  },
+  "skill_evidence": {
+    // For EACH skill you scored above, write ONE specific sentence (max 18 words)
+    // explaining WHY — point to the concrete thing the student did this session.
+    // Example: "storytelling": "Used clear STAR structure but rushed the result at the end."
+    // Only include skills that also appear in skill_scores.
   }`
     : `"skill_scores": {
     // Score any skills clearly demonstrated in this session (0–100)
+  },
+  "skill_evidence": {
+    // One specific sentence per scored skill explaining WHY (max 18 words)
   }`
 
   return `You are analyzing a coaching session to update a student's persistent memory profile.
@@ -78,6 +94,7 @@ STRICT RULES:
 - Be specific: "deflects conflict questions by saying it resolved itself" not "needs work on conflict"
 - For array fields: only add items NOT already in the existing model
 - For skill_scores: only include skills where the conversation gives enough evidence (2+ data points). Scores reflect THIS session's performance — merging handles the running average.
+- For skill_evidence: include one sentence ONLY for skills you scored. Be concrete and reference what actually happened this session — never generic. The student will read this to understand why their score is what it is.
 - If the session was short or nothing notable happened, return {}
 - Return raw JSON only — no markdown, no explanation, no code blocks`
 }
@@ -107,6 +124,8 @@ export function mergeStudentModel(existing: StudentModel, extracted: Partial<Stu
     if (combined.length > 0) (merged as any)[field] = combined.slice(0, 8)
   }
 
+  const today = new Date().toISOString().slice(0, 10)
+
   // Skill scores: exponential moving average (65% existing, 35% new)
   if (extracted.skill_scores && typeof extracted.skill_scores === 'object') {
     const existingScores = existing.skill_scores || {}
@@ -120,10 +139,26 @@ export function mergeStudentModel(existing: StudentModel, extracted: Partial<Stu
       }
     }
     if (Object.keys(updatedScores).length > 0) merged.skill_scores = updatedScores
+
+    // Skill evidence: APPEND new evidence (never overwrite), keep last 6 per skill.
+    // The LLM returns a one-line string per skill; we stamp date + current score.
+    const rawEvidence = (extracted as any).skill_evidence as Record<string, string> | undefined
+    if (rawEvidence && typeof rawEvidence === 'object') {
+      const mergedEvidence: Record<string, SkillEvidence[]> = { ...(existing.skill_evidence || {}) }
+      for (const [skill, note] of Object.entries(rawEvidence)) {
+        if (typeof note !== 'string' || !note.trim()) continue
+        // Only attach evidence to skills that actually have a score
+        const score = merged.skill_scores?.[skill]
+        if (score === undefined) continue
+        const prevList = mergedEvidence[skill] || []
+        mergedEvidence[skill] = [...prevList, { date: today, note: note.trim(), score }].slice(-6)
+      }
+      if (Object.keys(mergedEvidence).length > 0) merged.skill_evidence = mergedEvidence
+    }
   }
 
   merged.sessions_total = (existing.sessions_total || 0) + 1
-  merged.last_updated   = new Date().toISOString().slice(0, 10)
+  merged.last_updated   = today
   return merged
 }
 

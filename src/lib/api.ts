@@ -227,6 +227,12 @@ export interface SessionNote {
   created_at: string
 }
 
+export interface SkillEvidence {
+  date:  string
+  note:  string
+  score: number
+}
+
 export interface StudentModel {
   communication_style?:      string
   confidence_level?:         string
@@ -236,6 +242,7 @@ export interface StudentModel {
   trajectory?:               string
   preferred_feedback_style?: string
   skill_scores?:             Record<string, number>
+  skill_evidence?:           Record<string, SkillEvidence[]>
   sessions_total?:           number
   last_updated?:             string
 }
