@@ -53,11 +53,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
 
     const rawExtraction = (extractionRes.content[0] as any).text.trim()
-    let extracted: Partial<StudentModel> = {}
+    let extracted: any = {}
     try {
       const clean = rawExtraction.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim()
       extracted = JSON.parse(clean)
     } catch { /* silently skip bad extraction */ }
+
+    // ── 2b. GUARANTEED evidence step ──────────────────────────────────────────
+    // The big extraction is unreliable at nesting a "why" per skill, so we run a
+    // dedicated focused call that ONLY produces the reason for each scored skill.
+    // Normalise whatever score format the extraction returned into { skill: score }.
+    const scoredSkills: Record<string, number> = {}
+    if (extracted.skill_assessment && typeof extracted.skill_assessment === 'object') {
+      for (const [k, v] of Object.entries<any>(extracted.skill_assessment)) {
+        if (v && typeof v.score === 'number') scoredSkills[k] = v.score
+      }
+    } else if (extracted.skill_scores && typeof extracted.skill_scores === 'object') {
+      for (const [k, v] of Object.entries<any>(extracted.skill_scores)) {
+        if (typeof v === 'number') scoredSkills[k] = v
+      }
+    }
+
+    if (Object.keys(scoredSkills).length > 0) {
+      try {
+        const skillList = Object.keys(scoredSkills).join(', ')
+        const evidenceRes = await client.messages.create({
+          model:      'claude-haiku-4-5',
+          max_tokens: 400,
+          system:     'You explain skill assessments. Return ONLY valid JSON, no markdown.',
+          messages: [{
+            role: 'user',
+            content:
+              `Here is a coaching conversation:\n\n${conversation}\n\n` +
+              `For EACH of these skills: ${skillList}\n` +
+              `write ONE specific sentence (max 18 words) explaining what the student did THIS session ` +
+              `that justifies their score. Reference concrete moments. Return a JSON object mapping ` +
+              `each skill key to its sentence. Example: {"storytelling":"Used clear STAR structure but rushed the result."}`,
+          }],
+        })
+        const rawEv = (evidenceRes.content[0] as any).text.trim()
+        const cleanEv = rawEv.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim()
+        const whyMap = JSON.parse(cleanEv) as Record<string, string>
+
+        // Rebuild skill_assessment in the coupled format so the merge creates evidence
+        const assessment: Record<string, { score: number; why?: string }> = {}
+        for (const [skill, score] of Object.entries(scoredSkills)) {
+          assessment[skill] = { score, why: typeof whyMap[skill] === 'string' ? whyMap[skill] : undefined }
+        }
+        extracted.skill_assessment = assessment
+        delete extracted.skill_scores  // avoid double-processing in merge
+      } catch (e: any) {
+        console.error('[summarize] evidence step failed:', e.message)
+        // Fall back to whatever the original extraction had — scores still save
+      }
+    }
 
     const updatedModel = mergeStudentModel(existingModel, extracted)
     await supabase.from('user_profiles').upsert({ username, student_model: updatedModel })
