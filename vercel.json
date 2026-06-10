@@ -10,7 +10,7 @@
     "api/chat/summarize.ts": {
       "maxDuration": 60
     },
-    "api/auth/forgot-password.ts": {
+    "api/auth/[action].ts": {
       "maxDuration": 30
     }
   }
