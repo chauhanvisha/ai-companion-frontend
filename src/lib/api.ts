@@ -172,6 +172,55 @@ export interface Message {
   content: string
 }
 
+export interface ChatSession {
+  id: string
+  name: string
+  scenario: string
+  created_at: string
+  updated_at: string
+}
+
+export async function getChatSessions(scenario: string): Promise<ChatSession[]> {
+  const res = await fetch(`${BASE}/api/chat/sessions?scenario=${scenario}`, { headers: authHeaders() })
+  handle401(res)
+  const data = await res.json()
+  return data.sessions || []
+}
+
+export async function createChatSession(scenario: string, name: string): Promise<ChatSession> {
+  const res = await fetch(`${BASE}/api/chat/sessions`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ scenario, name }),
+  })
+  handle401(res)
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.detail || 'Failed to create session')
+  return data as ChatSession
+}
+
+export async function getChatSessionMessages(id: string): Promise<Message[]> {
+  const res = await fetch(`${BASE}/api/chat/session/${id}`, { headers: authHeaders() })
+  handle401(res)
+  const data = await res.json()
+  return data.messages || []
+}
+
+export async function updateChatSession(id: string, messages: Message[]): Promise<void> {
+  await fetch(`${BASE}/api/chat/session/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(),
+    body: JSON.stringify({ messages }),
+  })
+}
+
+export async function deleteChatSession(id: string): Promise<void> {
+  await fetch(`${BASE}/api/chat/session/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+}
+
 export interface SessionNote {
   scenario:   string
   notes:      string
