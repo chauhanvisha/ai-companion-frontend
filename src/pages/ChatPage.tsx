@@ -406,7 +406,7 @@ export default function ChatPage() {
       {/* ── HEADER ───────────────────────────────────────────────────────────── */}
       <header className="shrink-0 bg-white/80 backdrop-blur-md border-b border-blue-100/80 z-50"
               style={{ boxShadow: '0 2px 16px rgba(28,136,252,0.07)' }}>
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center gap-3">
+        <div className="w-full px-4 h-16 flex items-center gap-3">
           <button onClick={handleBack}
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-slate-500
               hover:text-primary hover:bg-blue-50 transition-all shrink-0">
@@ -448,7 +448,7 @@ export default function ChatPage() {
       </header>
 
       {/* ── BODY ─────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 max-w-5xl w-full mx-auto">
+      <div className="flex flex-1 min-h-0 w-full">
 
         {/* ── SIDEBAR ────────────────────────────────────────────────────────── */}
         <>
