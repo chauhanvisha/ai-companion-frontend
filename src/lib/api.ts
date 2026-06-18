@@ -74,7 +74,9 @@ export async function login(username: string, password: string) {
 
 export async function getProfile() {
   const res = await fetch(`${BASE}/api/profile`, { headers: authHeaders() })
-  return res.json()
+  handle401(res)
+  if (!res.ok) return null
+  return res.json().catch(() => null)
 }
 
 export async function saveProfile(field: string, target_role: string, school: string) {
@@ -88,7 +90,9 @@ export async function saveProfile(field: string, target_role: string, school: st
 
 export async function getSessionNotes() {
   const res = await fetch(`${BASE}/api/session-notes`, { headers: authHeaders() })
-  const data = await res.json()
+  handle401(res)
+  if (!res.ok) return [] as SessionNote[]
+  const data = await res.json().catch(() => ({}))
   return (data.notes || []) as SessionNote[]
 }
 
@@ -119,7 +123,9 @@ export async function summarizeSession(messages: Message[], scenario: string) {
     headers: authHeaders(),
     body: JSON.stringify({ messages, scenario }),
   })
-  return res.json()
+  handle401(res)
+  if (!res.ok) return null
+  return res.json().catch(() => null)
 }
 
 export function streamChat(
@@ -202,7 +208,8 @@ export async function createChatSession(scenario: string, name: string): Promise
 export async function getChatSessionMessages(id: string): Promise<Message[]> {
   const res = await fetch(`${BASE}/api/chat/session/${id}`, { headers: authHeaders() })
   handle401(res)
-  const data = await res.json()
+  if (!res.ok) return []
+  const data = await res.json().catch(() => ({}))
   return data.messages || []
 }
 
@@ -270,7 +277,9 @@ export interface CheckinStatus {
 
 export async function getCheckinStatus(): Promise<CheckinStatus> {
   const res = await fetch(`${BASE}/api/checkin`, { headers: authHeaders() })
-  return res.json()
+  handle401(res)
+  if (!res.ok) return { enabled: false, isDue: false, latest: null }
+  return res.json().catch(() => ({ enabled: false, isDue: false, latest: null }))
 }
 
 export async function saveCheckin(data: Omit<CheckinData, 'created_at'>) {
@@ -299,7 +308,9 @@ export interface ScoreSnapshot {
 
 export async function getScoreHistory(): Promise<ScoreSnapshot[]> {
   const res = await fetch(`${BASE}/api/score-history`, { headers: authHeaders() })
-  const data = await res.json()
+  handle401(res)
+  if (!res.ok) return []
+  const data = await res.json().catch(() => ({}))
   return data.snapshots || []
 }
 

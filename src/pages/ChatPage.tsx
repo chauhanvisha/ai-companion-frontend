@@ -147,12 +147,14 @@ export default function ChatPage() {
     try {
       const name    = generateSessionName()
       const session = await createChatSession(scenario, name)
+      activeSessionIdRef.current = session.id   // sync — so the opener's save lands in this session
       setActiveSessionId(session.id)
       setSessions(prev => [session, ...prev.filter(s => s.id !== session.id)])
       setMessages([])
       setLoading(false)
       sendOpener()
     } catch {
+      // Session couldn't be created — show the opener anyway so the demo never stalls
       setLoading(false)
       sendOpener()
     }
@@ -203,7 +205,7 @@ export default function ChatPage() {
 
   // ── New Chat ──────────────────────────────────────────────────────────────────
   async function handleNewChat() {
-    if (streaming) return
+    if (streaming || loading) return
     // Silently save current session
     const id = activeSessionIdRef.current
     if (id && messages.length > 0) updateChatSession(id, messages).catch(() => {})
@@ -214,7 +216,7 @@ export default function ChatPage() {
 
   // ── Switch session ────────────────────────────────────────────────────────────
   async function switchSession(id: string) {
-    if (streaming || id === activeSessionId) return
+    if (streaming || loading || id === activeSessionId) return
     setLoading(true)
     // Save current session first
     const currentId = activeSessionIdRef.current
@@ -229,6 +231,7 @@ export default function ChatPage() {
   // ── Delete session ────────────────────────────────────────────────────────────
   async function handleDeleteSession(id: string, e: React.MouseEvent) {
     e.stopPropagation()
+    if (streaming) return
     await deleteChatSession(id).catch(() => {})
     const remaining = sessions.filter(s => s.id !== id)
     setSessions(remaining)
@@ -276,7 +279,11 @@ export default function ChatPage() {
     if (messages.length < 4) { navigate('/dashboard'); return }
     setDebriefState('loading')
     try {
-      const result = await summarizeSession(messages, scenario)
+      // Never let the recap spinner hang — fall back to the dashboard after 15s
+      const result = await Promise.race([
+        summarizeSession(messages, scenario),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 15000)),
+      ])
       if (result?.summary) {
         const { bullets, action } = parseDebrief(result.summary)
         setDebriefBullets(bullets)
@@ -362,6 +369,10 @@ export default function ChatPage() {
                 ))}
               </div>
               <p className="text-slate-500 text-sm font-medium">Saving your session recap…</p>
+              <button onClick={() => navigate('/dashboard')}
+                className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-all">
+                Skip to dashboard
+              </button>
             </div>
           )}
 
