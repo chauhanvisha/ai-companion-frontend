@@ -3,10 +3,13 @@ import { SignJWT, jwtVerify } from 'jose'
 const jwtSecretRaw = process.env.JWT_SECRET || 'highview-dev-secret-change-in-production'
 const secret = new TextEncoder().encode(jwtSecretRaw)
 
+/** How long issued JWTs remain valid. Override with JWT_EXPIRY env var (e.g. "7d", "24h"). */
+const JWT_EXPIRY = (process.env.JWT_EXPIRY || '30d') as `${number}${'d' | 'h' | 'm' | 's'}`
+
 export async function createToken(username: string): Promise<string> {
   return new SignJWT({ sub: username })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('30d')
+    .setExpirationTime(JWT_EXPIRY)
     .sign(secret)
 }
 

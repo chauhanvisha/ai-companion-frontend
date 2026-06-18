@@ -98,11 +98,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { error: tokenError } = await client.from('password_reset_tokens').insert({ username, token, expires_at: expiresAt })
       if (tokenError) return res.status(500).json({ detail: 'Failed to generate reset link. Please try again.' })
 
-      const resetUrl = `${process.env.APP_URL || 'https://ai-companion-frontend-iota.vercel.app'}/reset-password?token=${token}`
+      const appUrl   = process.env.APP_URL || 'https://ai-companion-frontend-iota.vercel.app'
+      const resetUrl = `${appUrl}/reset-password?token=${token}`
       const resend   = new Resend(resendKey)
 
       await resend.emails.send({
-        from: 'HighView AI Coach <onboarding@resend.dev>',
+        from: process.env.EMAIL_FROM || 'HighView AI Coach <onboarding@resend.dev>',
         to: email.trim(),
         subject: 'Reset your HighView password',
         html: `

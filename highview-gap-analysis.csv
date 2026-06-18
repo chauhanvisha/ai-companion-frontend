@@ -1,0 +1,70 @@
+Done?,Feature,Status,Repo,Category,Priority,Notes
+,,,,,,
+✅ BUILT,,,,,,
+☑,Student login / signup,✅ Done,Both,Auth,Must-Have,AI Companion: JWT auth. SEP: separate student + staff login/signup pages
+☑,Forgot / reset password,✅ Done,AI Companion,Auth,Must-Have,Email-based via Resend with 1hr expiry token
+☑,Change password,✅ Done,Both,Auth,Must-Have,AI Companion: dashboard modal. SEP: profile settings panel
+☑,Staff login / signup,✅ Done,SEP,Auth,Must-Have,Separate TeacherLoginPage + TeacherSignupPage with role-based routing
+☑,Student profile (bio / school / major / skills / contact),✅ Done,SEP,Student Profile,Must-Have,Full editable profile with bio / school / major / GPA / LinkedIn / GitHub / skills
+☑,Student profile (field / role / school — basic),✅ Done,AI Companion,Student Profile,Must-Have,Simple 3-field profile used to personalise AI coaching sessions
+☑,Staff can view student profile,✅ Done,SEP,Student Profile,Must-Have,StudentProfilePage shows pillar scores + student self-profile + session details
+☑,Staff can manually edit student pillar scores,✅ Done,SEP,Student Profile,Must-Have,Staff-only Edit Progress panel on StudentProfilePage
+☑,Student status: on-track / at-risk / inactive,✅ Done,SEP,Engagement,Must-Have,Derived from avg of attendance + engagement scores — shown as badge on profile
+☑,Mobile-friendly version,✅ Done,AI Companion,Engagement,Must-Have,Responsive layout with collapsible sidebar + overlay on ChatPage
+☑,Cohort overview dashboard (staff),✅ Done,SEP,Admin & Staff Tools,Must-Have,CohortPage: stat boxes / pillar progress / alerts & follow-ups / student roster with sort + filter
+☑,At-risk student flagging,✅ Done,SEP,Admin & Staff Tools,Must-Have,Alerts & Follow-Ups section on CohortPage — configurable threshold via Settings panel
+☑,Student roster / management table,✅ Done,SEP,Admin & Staff Tools,Must-Have,StudentsPage: searchable sortable table + add student modal
+☑,Staff notes on students,✅ Done,SEP,Admin & Staff Tools,Must-Have,staffNotes shown in inline profile on CohortPage (static data — not editable in UI yet)
+☑,Cohort management (semester selector),✅ Done,SEP,Admin & Staff Tools,Must-Have,SemesterSelector component used across Sessions / Courses / Leaderboard / Attendance pages
+☑,Session management (staff),✅ Done,SEP,Engagement,Must-Have,SessionsPage: staff can create / edit / delete sessions with title / date / time / type / instructor
+☑,Session registration (student),✅ Done,SEP,Engagement,Must-Have,Students can register / unregister for sessions; mandatory vs optional tagging by class year
+☑,Add to calendar (Google / ICS),✅ Done,SEP,Engagement,Must-Have,Calendar dropdown on each session card for students
+☑,Attendance tracking — view / export,✅ Done,SEP,Engagement,Must-Have,AttendancePage: per-semester attendance records with present/absent filter + CSV export
+☑,Attendance tracking — live marking per session,✅ Done,SEP,Engagement,Must-Have,AttendanceTrackingPage: click-to-update present/absent per student per session
+☑,Leaderboard (staff only),✅ Done,SEP,Metrics,Must-Have,Sortable leaderboard with engagement / attendance / participation / total points + trend icons
+☑,Course catalog — student view,✅ Done,SEP,Experiences,Must-Have,Students can browse and register/drop courses; My Courses section
+☑,Course analytics — staff view,✅ Done,SEP,Experiences,Must-Have,Completion rates table / attendance distribution pie chart / key insights
+☑,Opportunities / experiential learning database,✅ Done,SEP,Experiences,Must-Have,OpportunitiesPage: filterable list of job shadows / micro-internships / networking / hackathons etc.
+☑,Staff can add / edit opportunities,✅ Done,SEP,Experiences,Must-Have,AddOpportunityPage + inline edit modal on OpportunitiesPage (staff only)
+☑,AI Scenario: Job interview simulation,✅ Done,AI Companion,AI Scenarios,Must-Have,Full Interview Prep with streaming AI + skill scoring + session history
+☑,AI Scenario: Zero inbox sprint,✅ Done,AI Companion,AI Scenarios,Must-Have,Inbox Reset — triage decisions with 8 email templates (student + professional)
+☑,AI Scenario: Email writing simulation,✅ Done,AI Companion,AI Scenarios,Must-Have,Email Writing with draft feedback + side-by-side comparisons
+☑,Lightweight AI coaching (reflection prompts / debrief),✅ Done,AI Companion,AI Scenarios,Must-Have,Per-session debrief with 3-bullet summary + before-next-time action item
+☑,Student skill score tracking (AI),✅ Done,AI Companion,Metrics,Must-Have,Per-scenario skill bars + sparkline history + evidence drill-down on dashboard
+☑,Weekly check-in,✅ Done,AI Companion,Engagement,Must-Have,Opt-in 3-question flow that feeds into AI coaching context
+☑,Session notes / advising history (student-facing),✅ Done,AI Companion,Admin & Staff Tools,Must-Have,Last 20 sessions saved with bullet summaries + next action — shown to student on dashboard
+☑,Low-maintenance student info (auto-updates via AI),✅ Done,AI Companion,Admin & Staff Tools,Must-Have,Living student model auto-updated after each session via Claude extraction
+☑,AI Analytics chatbot for staff,✅ Done,SEP,Admin & Staff Tools,Must-Have,TeacherAIChatbot on HomePage — connects to AWS API for attendance / engagement queries
+☑,Export reports (attendance / courses),✅ Done,SEP,Metrics,Must-Have,CSV export buttons on AttendancePage and CoursesPage
+☑,Transcript download (AI session),✅ Done,AI Companion,AI Scenarios,Nice-to-Have,.txt download of chat session from ChatPage
+☑,Student session history management,✅ Done,AI Companion,AI Scenarios,Must-Have,Named sessions per scenario — create / switch / delete
+☑,Post-session debrief modal,✅ Done,AI Companion,Metrics,Must-Have,3-bullet summary + next action shown on back-to-dashboard
+,,,,,,
+🟡 BUILT BUT DISABLED / PARTIAL,,,,,,
+☐,Cross-session AI memory injection,🟡 Built but off,AI Companion,AI Scenarios,Must-Have,Infrastructure exists — deliberately not passed to stream (blank slate design decision)
+☐,Semantic memory retrieval (pgvector),🟡 Built not used,AI Companion,AI Scenarios,Nice-to-Have,Embeddings saved to coaching_embeddings — retrieval not wired to chat
+☐,Staff notes — editable in UI,🟡 Partial,SEP,Admin & Staff Tools,Must-Have,staffNotes shown on CohortPage inline profile but no UI to add / edit notes yet
+☐,Student status shown on cohort table,🟡 Partial,SEP,Engagement,Must-Have,Status badge computed per student but no one-stop at-risk dashboard view for staff
+,,,,,,
+❌ NOT BUILT — MVP MUST-HAVES,,,,,,
+☐,Milestone tracking (required vs optional milestones),❌ Not Built,Neither,Engagement,Must-Have,No milestone system in either repo — biggest gap
+☐,One-stop shop for all tasks / events / milestones,❌ Not Built,Neither,Engagement,Must-Have,SEP has sessions but no unified task + milestone + event dashboard for students
+☐,Flag no-shows and late cancellations,❌ Not Built,SEP,Engagement,Must-Have,Session registrations exist but no no-show / late cancellation flagging logic
+☐,Document upload (transcript / resume / cover letter),❌ Not Built,Neither,Student Profile,Must-Have,No file upload in either repo — SEP profile is text-only
+☐,Social capital tracking (connections log),❌ Not Built,Neither,Social Capital,Must-Have,No networking / relationship features in either repo
+☐,Log connections (who / where met / last contact),❌ Not Built,Neither,Social Capital,Must-Have,
+☐,Prompt follow-ups for connections,❌ Not Built,Neither,Social Capital,Must-Have,
+☐,AI Scenario: Workplace conflict simulation,❌ Not Built,Neither,AI Scenarios,Must-Have,Only 3 scenarios built in AI Companion — conflict scenario is missing
+☐,Salesforce integration,❌ Not Built,Neither,Data & Integrations,Must-Have,No Salesforce or external CRM integration in either repo
+☐,Student can view their own progress (student-facing engagement dashboard),❌ Not Built,SEP,Engagement,Must-Have,SEP student home shows 3 pillar bars but no full progress / milestone view
+☐,Resource Center (campus / local / national events / HighView library),❌ Not Built,Neither,Experiences,Must-Have,OpportunitiesPage covers experiential learning but no general resource center
+,,,,,,
+❌ NOT BUILT — PHASE 2 / NICE-TO-HAVES,,,,,,
+☐,Mentor matching,❌ Not Built,Neither,Experiences,Nice-to-Have,Phase 2
+☐,Student engagement gamification,❌ Not Built,Neither,Engagement,Nice-to-Have,Phase 2 — Leaderboard exists for staff only
+☐,Milestone celebration features,❌ Not Built,Neither,Engagement,Nice-to-Have,Phase 2
+☐,Advanced AI features,❌ Not Built,Neither,AI Scenarios,Nice-to-Have,Phase 2
+☐,Complex matching algorithms,❌ Not Built,Neither,Experiences,Nice-to-Have,Phase 2
+☐,Auto-text/email follow-up to students (Remind replacement),❌ Not Built,Neither,Admin & Staff Tools,Nice-to-Have,Phase 2
+☐,Staff: mentor and professional self-serve profiles,❌ Not Built,Neither,Admin & Staff Tools,Nice-to-Have,Phase 2
+☐,Deep integrations (email / calendar beyond ICS),❌ Not Built,Neither,Data & Integrations,Nice-to-Have,Phase 2 — ICS/Google calendar export exists on sessions

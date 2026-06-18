@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import Anthropic from '@anthropic-ai/sdk'
 import OpenAI from 'openai'
 import { db } from '../_lib/db'
 import { getUserFromRequest } from '../_lib/auth'
 import { SESSION_SUMMARY_PROMPT, buildExtractionPrompt, mergeStudentModel, StudentModel, SCENARIO_SKILLS, SkillEvidence } from '../_lib/prompts'
+import { createMessage, getProvider } from '../_lib/ai'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ detail: 'Method not allowed' })
@@ -13,20 +13,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   catch { return res.status(401).json({ detail: 'Unauthorized' }) }
 
   const { messages, scenario } = req.body || {}
-  if (!messages || messages.length < 4) return res.json({ ok: false, reason: 'not enough messages' })
+  if (!messages || messages.length < MIN_MESSAGES_TO_SUMMARIZE) return res.json({ ok: false, reason: 'not enough messages' })
 
-  const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const supabase = db()
+
+  // Model config — override via env to swap models without code changes
+  const SUMMARY_MODEL         = process.env.ANTHROPIC_CHAT_MODEL      || 'claude-haiku-4-5'
+  const EXTRACTION_MODEL      = process.env.ANTHROPIC_EXTRACT_MODEL   || 'claude-haiku-4-5'
+  const EMBEDDING_MODEL       = process.env.OPENAI_EMBEDDING_MODEL    || 'text-embedding-3-small'
+  const SUMMARY_MAX_TOKENS    = parseInt(process.env.SUMMARY_MAX_TOKENS    || '512',  10)
+  const EXTRACTION_MAX_TOKENS = parseInt(process.env.EXTRACTION_MAX_TOKENS || '512',  10)
+  const EVIDENCE_MAX_TOKENS   = parseInt(process.env.EVIDENCE_MAX_TOKENS   || '400',  10)
+  const MIN_MESSAGES_TO_SUMMARIZE = parseInt(process.env.MIN_MESSAGES_TO_SUMMARIZE || '4', 10)
+
+  console.log(`[summarize] provider=${getProvider()} model=${SUMMARY_MODEL}`)
 
   try {
     // ── 1. Generate 3-bullet session summary ──────────────────────────────────
-    const summaryRes = await client.messages.create({
-      model:      'claude-opus-4-7',
-      max_tokens: 512,
+    const summary = await createMessage({
+      model:      SUMMARY_MODEL,
+      maxTokens:  SUMMARY_MAX_TOKENS,
       system:     'You are a concise note-taker summarizing a coaching session.',
       messages:   [...messages, { role: 'user', content: SESSION_SUMMARY_PROMPT }],
     })
-    const summary = (summaryRes.content[0] as any).text
 
     // Save session note
     await supabase.from('session_notes').insert({ username, scenario, notes: summary })
@@ -45,14 +54,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map((m: any) => `${m.role === 'user' ? 'STUDENT' : 'COACH'}: ${m.content}`)
       .join('\n\n')
 
-    const extractionRes = await client.messages.create({
-      model:      'claude-haiku-4-5',
-      max_tokens: 512,
-      system:     'You extract structured observations from coaching conversations. Return only valid JSON.',
-      messages:   [{ role: 'user', content: buildExtractionPrompt(existingModel, conversation, scenario) }],
+    const rawExtraction = await createMessage({
+      model:     EXTRACTION_MODEL,
+      maxTokens: EXTRACTION_MAX_TOKENS,
+      system:    'You extract structured observations from coaching conversations. Return only valid JSON.',
+      messages:  [{ role: 'user', content: buildExtractionPrompt(existingModel, conversation, scenario) }],
     })
-
-    const rawExtraction = (extractionRes.content[0] as any).text.trim()
     let extracted: any = {}
     try {
       const clean = rawExtraction.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim()
@@ -71,10 +78,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (skillsToExplain.length > 0) {
       try {
         const skillList = skillsToExplain.map(([k]) => k).join(', ')
-        const evidenceRes = await client.messages.create({
-          model:      'claude-haiku-4-5',
-          max_tokens: 400,
-          system:     'You explain skill assessments. Return ONLY valid JSON, no markdown.',
+        const rawEv = await createMessage({
+          model:     EXTRACTION_MODEL,
+          maxTokens: EVIDENCE_MAX_TOKENS,
+          system:    'You explain skill assessments. Return ONLY valid JSON, no markdown.',
           messages: [{
             role: 'user',
             content:
@@ -85,7 +92,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               `mapping each skill key to its sentence. Example: {"storytelling":"Used clear STAR structure but rushed the result."}`,
           }],
         })
-        const rawEv   = (evidenceRes.content[0] as any).text.trim()
         const cleanEv = rawEv.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim()
         const whyMap  = JSON.parse(cleanEv) as Record<string, string>
 
@@ -121,7 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
         const embeddingRes = await openai.embeddings.create({
-          model: 'text-embedding-3-small',
+          model: EMBEDDING_MODEL,
           input: summary,
         })
         const embedding = embeddingRes.data[0].embedding
