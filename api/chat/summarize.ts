@@ -12,6 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try { username = await getUserFromRequest(req as any) }
   catch { return res.status(401).json({ detail: 'Unauthorized' }) }
 
+  const MIN_MESSAGES_TO_SUMMARIZE = parseInt(process.env.MIN_MESSAGES_TO_SUMMARIZE || '4', 10)
   const { messages, scenario } = req.body || {}
   if (!messages || messages.length < MIN_MESSAGES_TO_SUMMARIZE) return res.json({ ok: false, reason: 'not enough messages' })
 
@@ -24,7 +25,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const SUMMARY_MAX_TOKENS    = parseInt(process.env.SUMMARY_MAX_TOKENS    || '512',  10)
   const EXTRACTION_MAX_TOKENS = parseInt(process.env.EXTRACTION_MAX_TOKENS || '512',  10)
   const EVIDENCE_MAX_TOKENS   = parseInt(process.env.EVIDENCE_MAX_TOKENS   || '400',  10)
-  const MIN_MESSAGES_TO_SUMMARIZE = parseInt(process.env.MIN_MESSAGES_TO_SUMMARIZE || '4', 10)
 
   console.log(`[summarize] provider=${getProvider()} model=${SUMMARY_MODEL}`)
 
@@ -115,10 +115,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── 3. Save skill score snapshot (for history graph) ──────────────────────
     if (updatedModel.skill_scores && Object.keys(updatedModel.skill_scores).length > 0) {
-      await supabase.from('skill_score_snapshots')
-        .insert({ username, scenario, scores: updatedModel.skill_scores })
-        .then(() => {})
-        .catch(() => {}) // non-critical
+      try {
+        await supabase.from('skill_score_snapshots')
+          .insert({ username, scenario, scores: updatedModel.skill_scores })
+      } catch { /* non-critical */ }
     }
 
     // ── 4. Generate embedding for semantic memory (pgvector) ─────────────────

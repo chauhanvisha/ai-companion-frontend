@@ -10,7 +10,7 @@
   "dependencies": {
     "@anthropic-ai/bedrock-sdk": "^0.31.0",
     "@anthropic-ai/sdk": "^0.99.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.1072.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1075.0",
     "@supabase/supabase-js": "^2.106.2",
     "clsx": "^2.0.0",
     "jose": "^4.15.9",
